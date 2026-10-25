@@ -1,0 +1,31 @@
+<div class="scrim" [class.open]="open()" (click)="close.emit()"></div>
+
+<nav class="drawer" id="drawer" aria-label="Playlists" [class.open]="open()" [attr.aria-hidden]="!open()" [attr.inert]="open() ? null : ''">
+  <div class="head">
+    <h2>Playlists</h2>
+    <button class="icon-btn" type="button" aria-label="Close menu" (click)="close.emit()">
+      <app-icon name="close" />
+    </button>
+  </div>
+
+  @for (group of library.groups(); track group.name) {
+    <div class="group">{{ group.name }}</div>
+    @for (station of group.stations; track station.key) {
+      <button class="item" type="button" [attr.data-key]="station.key"
+              [attr.aria-current]="library.selected().key === station.key"
+              (click)="pick(station)">
+        <span class="tile" [style.--c]="station.color">{{ station.mark }}</span>
+        <span class="text">
+          <b>{{ station.name }} @if (station.badge) {<em class="badge">{{ station.badge }}</em>}</b>
+          <span>{{ station.subtitle }}</span>
+        </span>
+      </button>
+    }
+  }
+
+  <p class="tip">
+    Tip: tap ♥ on a song to save it to Liked songs.<br>
+    Songs come from the Internet Archive, ad-free.<br><br>
+    Cassette.fm · crafted with ♥ by <b class="author">Ekant Shukla</b>
+  </p>
+</nav>

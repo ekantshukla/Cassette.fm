@@ -1,0 +1,63 @@
+<section class="card glass" aria-label="Now playing">
+  <!-- Record player -->
+  <div class="turntable" [class.playing]="spinning()">
+    <div class="vinyl">
+      <div class="label" [style.background]="labelBackground()"></div>
+    </div>
+    <div class="arm" aria-hidden="true">
+      <svg viewBox="0 0 100 180" fill="none">
+        <circle cx="78" cy="18" r="14" fill="rgba(255,255,255,.18)" />
+        <circle cx="78" cy="18" r="6" fill="#FFD7A3" />
+        <path d="M78 18 L70 120 L46 160" stroke="rgba(255,255,255,.75)" stroke-width="4" stroke-linecap="round" />
+        <rect x="34" y="152" width="22" height="14" rx="3" transform="rotate(-30 45 159)" fill="#FFC2D1" />
+      </svg>
+    </div>
+  </div>
+
+  <!-- Song details -->
+  <div class="station">{{ stationName() }}</div>
+  <h2 class="title">{{ song()?.title ?? 'Ready when you are' }}</h2>
+  <p class="artist">{{ song() ? song()!.artist : 'Tap play to start' }}</p>
+
+  <!-- Seek bar -->
+  <div class="progress">
+    <input class="range" id="seek" type="range" min="0" max="1000" aria-label="Seek"
+           [value]="seekPercent() * 10" [style.--p]="seekPercent() + '%'"
+           (input)="onSeekInput(seek.value)" (change)="onSeekChange(seek.value)" #seek>
+    <div class="times"><span>{{ elapsed() }}</span><span>{{ total() }}</span></div>
+  </div>
+
+  <!-- Controls -->
+  <div class="controls">
+    <button class="icon-btn small" type="button" aria-label="Shuffle"
+            [class.on]="player.shuffle()" [class.dim]="!player.shuffle()" [attr.aria-pressed]="player.shuffle()"
+            (click)="player.toggleShuffle()">
+      <app-icon name="shuffle" />
+    </button>
+    <button class="icon-btn" type="button" aria-label="Previous song" (click)="player.previous()">
+      <app-icon name="previous" />
+    </button>
+    <button class="icon-btn play-btn" type="button" [attr.aria-label]="player.isPlaying() ? 'Pause' : 'Play'"
+            (click)="player.togglePlay()">
+      <app-icon [name]="player.isPlaying() ? 'pause' : 'play'" />
+    </button>
+    <button class="icon-btn" type="button" aria-label="Next song" (click)="player.next()">
+      <app-icon name="next" />
+    </button>
+    <button class="icon-btn small" type="button" aria-label="Like this song"
+            [class.on]="isLiked()" [class.dim]="!isLiked()" [attr.aria-pressed]="isLiked()"
+            (click)="toggleLike()">
+      <app-icon [name]="isLiked() ? 'heart-filled' : 'heart'" />
+    </button>
+  </div>
+
+  <!-- Volume -->
+  <div class="volume">
+    <app-icon name="volume" />
+    <input class="range" id="volume" type="range" min="0" max="100" aria-label="Volume"
+           [value]="player.volume()" [style.--p]="player.volume() + '%'"
+           (input)="player.setVolume(+volume.value)" #volume>
+  </div>
+
+  <div class="credit">Crafted with <span>♥</span> by <b class="author">Ekant Shukla</b></div>
+</section>

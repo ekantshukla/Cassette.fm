@@ -1,0 +1,135 @@
+/* Desktop: player card on the left, headline + playlists + songs on the right.
+   Phones: one column — headline, player, songs. */
+
+.layout {
+  display: grid;
+  grid-template-columns: 400px minmax(0, 1fr);
+  gap: 40px;
+  align-items: start;
+  padding-block: 8px 48px;
+}
+
+.player-area {
+  position: sticky;
+  top: calc(env(safe-area-inset-top, 0px) + var(--header-height) + 12px);
+}
+
+.side {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.hello {
+  margin: 4px 0 4px;
+
+  h1 {
+    font-family: var(--serif);
+    font-weight: 400;
+    font-size: clamp(40px, 5.6vw, 68px);
+    line-height: 1;
+    margin: 0;
+    letter-spacing: -0.015em;
+    text-wrap: balance;
+
+    i { color: var(--blush); }
+  }
+
+  p {
+    margin: 14px 0 0;
+    color: var(--muted);
+    max-width: 40ch;
+    font-size: 17px;
+    line-height: 1.45;
+  }
+}
+
+/* Headline with the Liked button on its right */
+.hello-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+
+  h1 { min-width: 0; }
+}
+
+.liked-btn {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  padding: 10px 16px 10px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--glass);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: var(--text);
+  font-weight: 500;
+  font-size: 14px;
+  transition: background 0.2s, border-color 0.2s, transform 0.15s;
+
+  app-icon { width: 18px; height: 18px; color: var(--heart); }
+  &:hover { background: var(--glass-2); }
+  &:active { transform: scale(0.96); }
+  &[aria-pressed='true'] { border-color: rgba(255, 77, 109, 0.6); background: rgba(255, 77, 109, 0.16); }
+
+  .count {
+    min-width: 22px;
+    padding: 1px 7px;
+    border-radius: 999px;
+    background: var(--heart);
+    color: #fff;
+    font-family: var(--mono);
+    font-size: 11px;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+.mini-area { display: none; }
+
+footer {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 16px 32px;
+  color: var(--faint);
+  font-size: 13px;
+  text-align: center;
+
+  a { color: inherit; }
+  .by { color: var(--muted); }
+  .by .heart { color: var(--rose); }
+}
+
+@media (max-width: 900px) {
+  .layout { grid-template-columns: minmax(0, 1fr); gap: 28px; }
+  .player-area { position: static; grid-row: 2; }
+  .side { display: contents; }
+  .hello { grid-row: 1; margin-bottom: 0; }
+  .songs-area { grid-row: 3; }
+  .mini-area { display: block; }
+}
+
+/* Phones: just a round red heart, no text */
+@media (max-width: 600px) {
+  .liked-btn {
+    width: 44px;
+    height: 44px;
+    margin-top: 0;
+    padding: 0;
+    justify-content: center;
+
+    .label, .count { display: none; }
+    app-icon { width: 22px; height: 22px; }
+  }
+}
+
+@media (max-width: 480px) {
+  .hello h1 { font-size: 36px; }
+  .hello p { font-size: 14px; }
+}

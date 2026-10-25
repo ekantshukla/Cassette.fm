@@ -1,0 +1,17 @@
+<header>
+  <div class="wrap bar">
+    <div class="logo">Cassette<i>.fm</i></div>
+
+    <div class="right">
+      <app-search-box />
+      <app-language-picker />
+      <div class="live" [class.on]="player.isPlaying()">
+        <b></b><span>{{ liveText() }}</span>
+      </div>
+      <button class="menu-btn" type="button" aria-label="Open playlists menu" aria-controls="drawer"
+              [attr.aria-expanded]="menuOpen()" (click)="menuClick.emit()">
+        <app-icon name="menu" />
+      </button>
+    </div>
+  </div>
+</header>

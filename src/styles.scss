@@ -1,0 +1,150 @@
+/*
+ * Global styles: design tokens and the few classes shared by several components.
+ * Everything else lives in each component's own .scss file.
+ *
+ * Look: romantic night radio. Dusk sky + drifting bokeh behind frosted glass.
+ * One committed dark theme.
+ */
+
+:root {
+  // Colours
+  --night: #140c26;
+  --plum: #3a1747;
+  --rose: #ff6f91;
+  --blush: #ffc2d1;
+  --gold: #ffd7a3;
+  --heart: #ff3b5c; // Liked button
+  --ink-on-rose: #2a0e1c;
+  --text: #fff4f7;
+  --muted: rgba(255, 228, 236, 0.64);
+  --faint: rgba(255, 228, 236, 0.38);
+  --glass: rgba(255, 255, 255, 0.07);
+  --glass-2: rgba(255, 255, 255, 0.12);
+  --line: rgba(255, 255, 255, 0.13);
+
+  // Type
+  --serif: 'Instrument Serif', Georgia, 'Times New Roman', serif;
+  --sans: 'Geist', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --mono: 'Geist Mono', ui-monospace, Menlo, monospace;
+
+  // Layout
+  --gutter: 20px;
+  --header-height: 70px;
+
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+
+html, body { margin: 0; min-height: 100%; }
+
+body {
+  background: var(--night);
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  overflow-x: hidden;
+}
+
+button, input { font: inherit; color: inherit; }
+button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+:focus-visible { outline: 2px solid var(--blush); outline-offset: 3px; border-radius: 8px; }
+
+/* Page width container */
+.wrap {
+  max-width: 1160px;
+  margin: 0 auto;
+  padding-left: max(var(--gutter), env(safe-area-inset-left, 0px));
+  padding-right: max(var(--gutter), env(safe-area-inset-right, 0px));
+}
+
+/* Frosted glass panel */
+.glass {
+  background: var(--glass);
+  border: 1px solid var(--line);
+  border-radius: 28px;
+  backdrop-filter: blur(22px) saturate(140%);
+  -webkit-backdrop-filter: blur(22px) saturate(140%);
+  box-shadow: 0 30px 80px -40px rgba(0, 0, 0, 0.7);
+}
+
+/* Round icon button */
+.icon-btn {
+  background: none;
+  border: 0;
+  padding: 10px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: var(--text);
+  transition: background 0.15s, color 0.15s, transform 0.15s;
+
+  &:hover { background: var(--glass-2); }
+  &.small app-icon { width: 19px; height: 19px; }
+  &.dim { color: var(--muted); }
+  &.on { color: var(--rose); }
+}
+
+/* Big pink play / pause button */
+.play-btn {
+  width: 68px;
+  height: 68px;
+  background: linear-gradient(135deg, var(--rose), #ff9a8b);
+  color: var(--ink-on-rose);
+  box-shadow: 0 12px 30px -8px rgba(255, 111, 145, 0.7);
+
+  &:hover { background: linear-gradient(135deg, var(--rose), #ff9a8b); transform: scale(1.05); }
+  app-icon { width: 26px; height: 26px; }
+}
+
+/* Slider (seek and volume). Set --p to the filled percentage. */
+.range {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 4px;
+  border-radius: 4px;
+  margin: 0;
+  cursor: pointer;
+  background:
+    linear-gradient(90deg, var(--rose), var(--gold)) 0 / var(--p, 0%) 100% no-repeat,
+    rgba(255, 255, 255, 0.14);
+
+  &::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #fff;
+    border: 0;
+    box-shadow: 0 0 0 4px rgba(255, 111, 145, 0.25);
+  }
+  &::-moz-range-thumb { width: 14px; height: 14px; border-radius: 50%; background: #fff; border: 0; }
+}
+
+/* The author's name: same font, size and colour everywhere it appears */
+.author {
+  font-family: var(--serif);
+  font-style: italic;
+  font-weight: 400;
+  font-size: 15px;
+  line-height: 1.2;
+  color: var(--blush);
+  letter-spacing: 0.01em;
+}
+
+/* Shared keyframes */
+@keyframes spin { to { transform: rotate(360deg); } }
+
+@media (max-width: 600px) {
+  :root { --gutter: 12px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+}

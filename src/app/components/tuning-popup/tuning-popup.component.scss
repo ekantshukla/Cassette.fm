@@ -1,0 +1,99 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: radial-gradient(60% 45% at 50% 50%, rgba(40, 18, 64, 0.35), rgba(14, 6, 26, 0.18) 70%, transparent);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.6s ease, visibility 0.6s;
+
+  &.show { opacity: 1; visibility: visible; }
+  &.show .card { transform: none; }
+}
+
+.card {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  max-width: 320px;
+  padding: 30px 36px 26px;
+  border-radius: 36px;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(26px) saturate(150%);
+  -webkit-backdrop-filter: blur(26px) saturate(150%);
+  box-shadow: 0 20px 70px -24px rgba(0, 0, 0, 0.55);
+  transform: translateY(12px) scale(0.97);
+  transition: transform 0.7s cubic-bezier(0.25, 0.8, 0.25, 1);
+
+  // two soft drifting glows behind the card
+  &::before, &::after {
+    content: '';
+    position: absolute;
+    z-index: -1;
+    border-radius: 50%;
+    filter: blur(30px);
+    opacity: 0.55;
+    pointer-events: none;
+  }
+  &::before {
+    width: 180px; height: 140px; left: -30px; top: -20px;
+    background: radial-gradient(circle, rgba(255, 140, 170, 0.55), transparent 70%);
+    animation: drift-1 7s ease-in-out infinite alternate;
+  }
+  &::after {
+    width: 200px; height: 150px; right: -40px; bottom: -30px;
+    background: radial-gradient(circle, rgba(170, 120, 255, 0.5), transparent 70%);
+    animation: drift-2 8s ease-in-out infinite alternate;
+  }
+
+  b {
+    font-family: var(--serif);
+    font-weight: 400;
+    font-size: 25px;
+    line-height: 1.15;
+    color: rgba(255, 255, 255, 0.95);
+    text-shadow: 0 2px 20px rgba(0, 0, 0, 0.35);
+  }
+}
+
+@keyframes drift-1 { to { transform: translate(40px, 20px) scale(1.25); } }
+@keyframes drift-2 { from { transform: scale(1.1); } to { transform: translate(-40px, -16px) scale(0.9); } }
+
+.disc {
+  width: 60px;
+  height: 60px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  opacity: 0.9;
+  background: repeating-radial-gradient(circle, #141018 0 1.5px, #1d1822 2px 3px);
+  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.06), 0 0 40px -6px rgba(255, 111, 145, 0.7);
+  animation: spin 3s linear infinite;
+
+  i { width: 26px; height: 26px; border-radius: 50%; background: linear-gradient(135deg, var(--rose), var(--gold)); }
+}
+
+.dots {
+  display: flex;
+  gap: 6px;
+
+  i { width: 7px; height: 7px; border-radius: 50%; background: var(--rose); animation: bounce 1.2s infinite ease-in-out; }
+  i:nth-child(2) { animation-delay: 0.15s; }
+  i:nth-child(3) { animation-delay: 0.3s; }
+}
+
+@keyframes bounce {
+  0%, 80%, 100% { transform: translateY(0); opacity: 0.5; }
+  40% { transform: translateY(-6px); opacity: 1; }
+}

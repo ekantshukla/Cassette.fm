@@ -1,0 +1,12 @@
+<div class="chips" role="group" aria-label="Playlists">
+  @for (group of library.groups(); track group.name) {
+    <span class="group">{{ group.name }}</span>
+    @for (station of group.stations; track station.key) {
+      <button class="chip" type="button" [attr.data-key]="station.key"
+              [attr.aria-pressed]="library.selected().key === station.key"
+              (click)="pick(station)">
+        {{ station.name }}
+      </button>
+    }
+  }
+</div>

@@ -1,0 +1,13 @@
+// Size is set by the parent: `app-icon { width: 22px; height: 22px; }`
+:host {
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  flex: none;
+}
+
+svg {
+  width: 100%;
+  height: 100%;
+}

@@ -1,0 +1,6 @@
+<button class="trigger" type="button" aria-haspopup="dialog" aria-label="Change music language" aria-controls="language-panel"
+        [attr.aria-expanded]="ui.languageOpen()" (click)="ui.languageOpen.set(!ui.languageOpen())">
+  <app-icon name="globe" class="globe" />
+  <span class="current" [attr.lang]="library.language().code">{{ library.language().native }}</span>
+  <app-icon name="chevron-down" class="chevron" />
+</button>

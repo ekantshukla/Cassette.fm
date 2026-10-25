@@ -1,0 +1,13 @@
+<div class="mini">
+  <div class="disc" [class.spinning]="player.isPlaying() && !player.isTuning()" [style.background-image]="cover()"></div>
+  <div class="info">
+    <b>{{ song()?.title ?? 'Cassette.fm' }}</b>
+    <span>{{ subtitle() }}</span>
+  </div>
+  <div class="by">by<b class="author">Ekant Shukla</b></div>
+  <button class="icon-btn play-btn" type="button" [attr.aria-label]="player.isPlaying() ? 'Pause' : 'Play'"
+          (click)="player.togglePlay()">
+    <app-icon [name]="player.isPlaying() ? 'pause' : 'play'" />
+  </button>
+  <div class="bar"><i [style.width.%]="player.progress() * 100"></i></div>
+</div>

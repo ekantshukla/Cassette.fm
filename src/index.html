@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Cassette.fm</title>
+  <!-- "./" lets the site work from any folder, e.g. username.github.io/Oldskool.fm/ -->
+  <base href="./">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="80s, 90s and 2000s Bollywood love songs, nonstop. Free, no login, no ads.">
+  <meta name="theme-color" content="#140C26">
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <!-- Start downloading the ready-made playlists right away, before the app has even started -->
+  <link rel="preload" href="playlists.json" as="fetch" crossorigin>
+  <!-- Open the connection to archive.org early, so the first song starts sooner -->
+  <link rel="preconnect" href="https://archive.org" crossorigin>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400&display=swap">
+
+  <!-- Loading screen: shown the moment the page opens, replaced as soon as the app starts -->
+  <style>
+    .boot {
+      position: fixed; inset: 0; z-index: 100;
+      display: grid; place-items: center; align-content: center; gap: 22px;
+      background:
+        radial-gradient(60% 50% at 15% 10%, rgba(255, 111, 145, .45), transparent 70%),
+        radial-gradient(50% 45% at 90% 25%, rgba(155, 89, 255, .35), transparent 70%),
+        linear-gradient(180deg, #1a0f33 0%, #2a1240 45%, #160b29 100%);
+      color: #fff4f7; font-family: Georgia, 'Times New Roman', serif;
+    }
+    .boot-disc {
+      width: 96px; height: 96px; border-radius: 50%;
+      background:
+        radial-gradient(circle, #ff6f91 0 30%, #140c26 30.5% 33%, transparent 33.5%),
+        repeating-radial-gradient(circle, #141018 0 1.5px, #1d1822 2px 3px);
+      box-shadow: 0 0 0 5px rgba(255, 255, 255, .05), 0 0 50px -6px rgba(255, 111, 145, .7);
+      animation: boot-spin 1.6s linear infinite;
+    }
+    .boot-logo { font-size: 30px; letter-spacing: -.01em; }
+    .boot-logo i { color: #ff6f91; }
+    .boot-text { font: 12px/1 ui-monospace, Menlo, monospace; letter-spacing: .16em; text-transform: uppercase; color: rgba(255, 228, 236, .64); }
+    @keyframes boot-spin { to { transform: rotate(360deg); } }
+    @media (prefers-reduced-motion: reduce) { .boot-disc { animation: none; } }
+  </style>
+</head>
+<body>
+  <app-root>
+    <div class="boot" role="status" aria-live="polite">
+      <div class="boot-disc"></div>
+      <div class="boot-logo">Cassette<i>.fm</i></div>
+      <div class="boot-text">Tuning in…</div>
+    </div>
+  </app-root>
+</body>
+</html>

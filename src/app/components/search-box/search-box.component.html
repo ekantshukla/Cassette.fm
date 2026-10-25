@@ -1,0 +1,74 @@
+<button class="search-btn" type="button" aria-label="Search songs" [attr.aria-expanded]="expanded()" (click)="expand()">
+  <app-icon name="search" />
+</button>
+
+@if (expanded()) {
+<div class="overlay">
+  <label class="field" for="search">
+    <app-icon name="search" />
+    <input #input id="search" type="search" placeholder="Song, film or singer" autocomplete="off" enterkeyhint="search"
+           aria-controls="search-results"
+           (focus)="onFocus()" (input)="onInput(input.value)" (keydown)="onKeydown($event)">
+  </label>
+  <button class="icon-btn close-btn" type="button" aria-label="Close search" (click)="close(true)">
+    <app-icon name="close" />
+  </button>
+
+@if (isOpen()) {
+  <div class="results" id="search-results" role="listbox">
+    @if (!query()) {
+      @if (songHits().length) {
+        <div class="heading">Popular classics</div>
+        @for (hit of songHits(); track hit.song.itemId + hit.song.file) {
+          <ng-container *ngTemplateOutlet="songRow; context: { $implicit: hit }" />
+        }
+      } @else {
+        <div class="message">Type a song, film or singer</div>
+      }
+    } @else {
+      @if (songHits().length) {
+        <div class="heading">{{ songHits().length }} {{ songHits().length === 1 ? 'song' : 'songs' }}</div>
+        @for (hit of songHits(); track hit.song.itemId + hit.song.file) {
+          <ng-container *ngTemplateOutlet="songRow; context: { $implicit: hit }" />
+        }
+      }
+
+      @if (albums()?.length) {
+        <div class="heading">Albums on Internet Archive</div>
+        @for (album of albums(); track album.id) {
+          @let t = highlight(album.title, text().trim());
+          <button class="result" type="button" role="option" (click)="playAlbum(album)">
+            <span class="thumb" [style.background-image]="thumb(album.id)"></span>
+            <span class="info">
+              <b>{{ t.before }}<mark>{{ t.match }}</mark>{{ t.after }}</b>
+              <span>{{ album.artist }}</span>
+            </span>
+            <span class="tag">Album</span>
+          </button>
+        }
+      } @else if (albumsLoading()) {
+        <div class="message">Searching the Internet Archive…</div>
+      }
+
+      @if (!songHits().length && !albums()?.length && !albumsLoading()) {
+        <div class="message">No match for “{{ text().trim() }}”. Try a film name or singer.</div>
+      }
+    }
+  </div>
+}
+
+</div>
+}
+
+<ng-template #songRow let-hit>
+  @let t = highlight(hit.song.title, text().trim());
+  @let a = highlight(hit.song.artist, text().trim());
+  <button class="result" type="button" role="option" (click)="playSong(hit)">
+    <span class="thumb" [style.background-image]="thumb(hit.song.itemId)"></span>
+    <span class="info">
+      <b>{{ t.before }}<mark>{{ t.match }}</mark>{{ t.after }}</b>
+      <span>{{ a.before }}<mark>{{ a.match }}</mark>{{ a.after }}</span>
+    </span>
+    <span class="tag">{{ hit.station.name }}</span>
+  </button>
+</ng-template>

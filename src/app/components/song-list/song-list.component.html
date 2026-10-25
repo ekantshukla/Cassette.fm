@@ -1,0 +1,49 @@
+<section class="panel glass" aria-label="Songs">
+  <div class="head">
+    <h2>{{ heading() }}</h2>
+    <span class="count">{{ countText() }}</span>
+  </div>
+
+  <ol class="list" [class.playing]="player.isPlaying() && !player.isTuning()">
+    @if (songs().length) {
+      @for (song of songs(); track songKey(song); let i = $index) {
+        @let liked = library.isLiked(song);
+        <li class="row" tabindex="0" [class.current]="player.isCurrent(song)" [attr.data-key]="songKey(song)"
+            (click)="play(i)" (keydown.enter)="play(i)" (keydown.space)="$event.preventDefault(); play(i)">
+          <span class="number">{{ i + 1 }}</span>
+          <span class="thumb" [style.background-image]="thumb(song)"></span>
+          <span class="info">
+            <b>{{ song.title }}</b>
+            <span>{{ song.artist || song.album }}</span>
+          </span>
+          <button class="icon-btn small heart" type="button" aria-label="Like"
+                  [class.on]="liked" [attr.aria-pressed]="liked" (click)="toggleLike($event, song)">
+            <app-icon name="heart-filled" />
+          </button>
+        </li>
+      }
+      @if (station().endless && library.canLoadMore(station())) {
+        <li class="more">
+          <button type="button" [disabled]="library.loadingMore() === station().key" (click)="library.loadMore(station())">
+            @if (library.loadingMore() === station().key) {
+              <span class="spinner"></span> Finding more songs on the Archive…
+            } @else {
+              Load more songs
+            }
+          </button>
+        </li>
+      }
+    } @else if (station().isLiked) {
+      <li class="empty">Tap ♥ on any song to keep it here.</li>
+    } @else if (finished()) {
+      <li class="empty">Couldn't find songs for this playlist right now. Check your internet, or try another one.</li>
+    } @else {
+      @for (p of placeholders; track $index) {
+        <li class="row skeleton">
+          <span class="number"></span><span class="thumb"></span>
+          <span class="info"><b>&nbsp;</b><span>&nbsp;</span></span><span></span>
+        </li>
+      }
+    }
+  </ol>
+</section>

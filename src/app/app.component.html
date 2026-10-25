@@ -1,0 +1,40 @@
+<app-bokeh-background />
+
+<app-header [menuOpen]="menuOpen()" (menuClick)="menuOpen.set(true)" />
+
+<main class="wrap layout">
+  <app-player-card class="player-area" />
+
+  <div class="side">
+    <section class="hello">
+      <div class="hello-top">
+        <h1>Love songs that <i>never get old.</i></h1>
+        <button class="liked-btn" type="button" aria-label="Liked songs"
+                [attr.aria-pressed]="!!library.selected().isLiked" (click)="openLiked()">
+          <app-icon name="heart-filled" />
+          <span class="label">Liked</span>
+          @if (library.liked().length) {
+            <span class="count">{{ library.liked().length }}</span>
+          }
+        </button>
+      </div>
+      <p>{{ library.language().tagline }}</p>
+    </section>
+    <app-station-chips class="chips-area" />
+    <app-song-list class="songs-area" />
+  </div>
+</main>
+
+@if (showMini()) {
+  <app-mini-player class="mini-area" />
+}
+
+<footer>
+  <div>© {{ year }} Cassette.fm. All rights reserved. Songs belong to their respective owners.</div>
+  <div class="by">Crafted with <span class="heart">♥</span> by <b class="author">Ekant Shukla</b> in Bengaluru, India</div>
+</footer>
+
+<app-playlist-drawer [open]="menuOpen()" (close)="menuOpen.set(false)" />
+<app-language-panel />
+<app-tuning-popup />
+<app-toast />

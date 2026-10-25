@@ -1,0 +1,7 @@
+<div class="overlay" [class.show]="player.isTuning()" role="status" aria-live="polite" [attr.aria-hidden]="!player.isTuning()">
+  <div class="card">
+    <div class="disc"><i></i></div>
+    <b>Tuning in…</b>
+    <div class="dots"><i></i><i></i><i></i></div>
+  </div>
+</div>
