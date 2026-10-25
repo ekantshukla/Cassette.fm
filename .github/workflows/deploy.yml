@@ -1,0 +1,55 @@
+# Builds the site and publishes it to GitHub Pages.
+# Runs on every push to main, once a day (to refresh the playlists), and on demand.
+# One-time setup: repo Settings -> Pages -> Source: "GitHub Actions".
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '30 21 * * *'   # every day at 03:00 India time
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+
+      # Look up every playlist on archive.org now, so visitors get them instantly.
+      # If this fails, the site still works: it falls back to looking songs up live.
+      - name: Build playlists
+        run: npm run playlists
+        continue-on-error: true
+        timeout-minutes: 45   # ~100 playlists across 13 languages
+        env:
+          PREVIOUS_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/playlists.json
+
+      - run: npm run build
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist/oldskool-fm/browser
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
