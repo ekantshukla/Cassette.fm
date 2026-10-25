@@ -16,7 +16,7 @@ const KEY_LIKED = 'osfm.v4.liked';
 const KEY_STATION = 'osfm.station';
 const KEY_LANGUAGE = 'osfm.lang';
 /** Bump when the cached song format changes, so old caches are ignored. */
-const CACHE_VERSION = 5;
+const CACHE_VERSION = 6;
 
 interface CachedStation {
   version: number;
@@ -31,7 +31,9 @@ interface CachedStation {
  * Loading this one small file is what makes playlists open instantly.
  */
 const PREBUILT_URL = 'playlists.json';
-export interface PrebuiltPlaylists { generatedAt: string; playlists: Record<string, Song[]>; }
+export interface PrebuiltPlaylists { version?: number; generatedAt: string; playlists: Record<string, Song[]>; }
+/** Bump when the rules for what may appear in playlists change, so older lists are never reused. */
+export const PLAYLISTS_VERSION = 2;
 
 /** Hand-picked songs looked up at the same time. Higher = faster, but more load on archive.org. */
 const SONG_LOOKUPS_AT_ONCE = 8;
@@ -279,7 +281,7 @@ export class LibraryService {
         ? Promise.resolve(null) // running in the build script itself
         : fetch(PREBUILT_URL)
             .then(res => (res.ok ? (res.json() as Promise<PrebuiltPlaylists>) : null))
-            .then(file => file?.playlists ?? null)
+            .then(file => (file?.version === PLAYLISTS_VERSION ? file.playlists : null))
             .catch(() => null);
     }
     return this.prebuilt;

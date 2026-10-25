@@ -19,7 +19,7 @@ import { dirname } from 'node:path';
 import { ALL_STATIONS as STATIONS } from '../src/app/data/languages';
 import { Song } from '../src/app/models/song.model';
 import { ArchiveService } from '../src/app/services/archive.service';
-import { LibraryService, PrebuiltPlaylists } from '../src/app/services/library.service';
+import { LibraryService, PLAYLISTS_VERSION, PrebuiltPlaylists } from '../src/app/services/library.service';
 import { SongFinderService } from '../src/app/services/song-finder.service';
 import { StorageService } from '../src/app/services/storage.service';
 
@@ -48,7 +48,7 @@ async function main(): Promise<void> {
     console.log(`${station.name.padEnd(18)} ${String(songs.length).padStart(4)} songs  ${((Date.now() - started) / 1000).toFixed(1)}s${note}`);
   }
 
-  const file: PrebuiltPlaylists = { generatedAt: new Date().toISOString(), playlists };
+  const file: PrebuiltPlaylists = { version: PLAYLISTS_VERSION, generatedAt: new Date().toISOString(), playlists };
   mkdirSync(dirname(OUTPUT), { recursive: true });
   writeFileSync(OUTPUT, JSON.stringify(file));
   const total = Object.values(playlists).reduce((n, list) => n + list.length, 0);
@@ -61,7 +61,9 @@ async function fetchPrevious(): Promise<Record<string, Song[]> | null> {
   try {
     const res = await fetch(url);
     if (!res.ok) return null;
-    return ((await res.json()) as PrebuiltPlaylists).playlists ?? null;
+    const file = (await res.json()) as PrebuiltPlaylists;
+    // Only reuse lists made under the same rules (older ones may hold songs we now block).
+    return file.version === PLAYLISTS_VERSION ? file.playlists : null;
   } catch {
     return null;
   }

@@ -2,8 +2,9 @@
   <div class="wrap bar">
     <div class="logo">Cassette<i>.fm</i></div>
 
+    <app-search-box class="search" />
+
     <div class="right">
-      <app-search-box />
       <app-language-picker />
       <div class="live" [class.on]="player.isPlaying()">
         <b></b><span>{{ liveText() }}</span>

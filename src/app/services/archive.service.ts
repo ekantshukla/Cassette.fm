@@ -9,9 +9,24 @@ import { cleanName, firstValue, parseLength } from '../utils/text.utils';
 /** Songs shorter than this are clips; longer ones are nonstop mixes. Both are skipped. */
 const MIN_SONG_SECONDS = 45;
 const MAX_SONG_SECONDS = 25 * 60;
-/** Uploads we never play: other-language and karaoke/instrumental versions. */
-const EXCLUDE_QUERY = 'NOT (bhojpuri OR karaoke OR instrumental)';
-const EXCLUDE_NAME = /bhojpuri|karaoke|instrumental/i;
+/**
+ * Uploads we never play, in any playlist or language:
+ *  - religious recitations, prayers and devotional recordings (of every faith)
+ *  - talks, lectures, sermons, podcasts, audiobooks and other spoken audio
+ *  - karaoke and instrumental versions
+ *  - uploads from outside India (this is a site for Indian music)
+ */
+const BLOCKED = [
+  'quran', 'koran', 'surah', 'sura', 'tilawat', 'tilawah', 'tafsir', 'hadith', 'naat', 'khutba', 'bayan', 'nasheed',
+  'bhajan', 'aarti', 'mantra', 'chalisa', 'kirtan', 'gurbani', 'shabad', 'bhakti', 'devotional', 'stotram', 'hymn', 'gospel', 'bible', 'prayer', 'qawwali',
+  'sermon', 'lecture', 'podcast', 'audiobook', '"audio book"', 'interview', 'speech', 'talk', 'news',
+  'karaoke', 'instrumental',
+  'pakistan', 'pakistani', 'lahore', 'karachi', 'islamabad', 'ptv', 'bangladesh', 'dhaka',
+];
+const EXCLUDE_QUERY = `NOT (${BLOCKED.join(' OR ')})`;
+const EXCLUDE_NAME = new RegExp(`\\b(${BLOCKED.map(w => w.replace(/"/g, '')).join('|')}|qur'?an)\\b`, 'i');
+/** Arabic/Urdu script: none of the site's languages use it, so titles in it are never a match. */
+const ARABIC_SCRIPT = /[\u0600-\u06FF\u0750-\u077F]/;
 /** Most songs taken from a single album, so one album can't fill a playlist. */
 const MAX_SONGS_PER_ITEM = 40;
 
@@ -56,7 +71,8 @@ export class ArchiveService {
 
       const meta = res.metadata ?? {};
       if (String(meta['access-restricted-item']) === 'true') return [];
-      if (EXCLUDE_NAME.test(`${firstValue(meta.title)} ${firstValue(meta.creator)}`)) return [];
+      const about = `${firstValue(meta.title)} ${firstValue(meta.creator)} ${[meta.subject ?? []].flat().join(' ')}`;
+      if (EXCLUDE_NAME.test(about) || ARABIC_SCRIPT.test(about)) return [];
 
       const album = cleanName(firstValue(meta.title)) || itemId;
       const albumArtist = firstValue(meta.creator);
@@ -64,7 +80,7 @@ export class ArchiveService {
       // Originals first, so the de-duplication below keeps them over lower-quality copies.
       const mp3s = res.files
         .filter(f => /\.mp3$/i.test(f.name) && String(f.private) !== 'true' && !/(_sample|_preview|_spectrogram)/i.test(f.name))
-        .filter(f => !EXCLUDE_NAME.test(`${f.name} ${f.title ?? ''} ${firstValue(f.artist)}`))
+        .filter(f => { const t = `${f.name} ${f.title ?? ''} ${firstValue(f.artist)}`; return !EXCLUDE_NAME.test(t) && !ARABIC_SCRIPT.test(t); })
         .sort((a, b) => (a.source === 'original' ? 0 : 1) - (b.source === 'original' ? 0 : 1));
 
       const seen = new Set<string>();

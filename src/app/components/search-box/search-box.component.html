@@ -1,18 +1,24 @@
-<button class="search-btn" type="button" aria-label="Search songs" [attr.aria-expanded]="expanded()" (click)="expand()">
-  <app-icon name="search" />
-</button>
+<!-- Phones: just a search button until tapped -->
+@if (isPhone() && !expanded()) {
+  <button class="search-btn" type="button" aria-label="Search songs" (click)="expand()">
+    <app-icon name="search" />
+  </button>
+}
 
-@if (expanded()) {
-<div class="overlay">
+<!-- Desktop: always a search field. Phones: the field covers the header once the button is tapped. -->
+@if (!isPhone() || expanded()) {
+<div class="search-area" [class.overlay]="isPhone()">
   <label class="field" for="search">
     <app-icon name="search" />
-    <input #input id="search" type="search" placeholder="Song, film or singer" autocomplete="off" enterkeyhint="search"
+    <input #input id="search" type="search" placeholder="Search songs" autocomplete="off" enterkeyhint="search"
            aria-controls="search-results"
            (focus)="onFocus()" (input)="onInput(input.value)" (keydown)="onKeydown($event)">
   </label>
-  <button class="icon-btn close-btn" type="button" aria-label="Close search" (click)="close(true)">
-    <app-icon name="close" />
-  </button>
+  @if (isPhone()) {
+    <button class="icon-btn close-btn" type="button" aria-label="Close search" (click)="close(true)">
+      <app-icon name="close" />
+    </button>
+  }
 
 @if (isOpen()) {
   <div class="results" id="search-results" role="listbox">

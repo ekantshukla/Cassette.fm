@@ -27,7 +27,12 @@ npm start          # opens on http://localhost:4200
 
 The 🌐 switch in the header (just a globe on phones) changes the music language:
 Hindi, English, Tamil, Telugu, Kannada, Malayalam, Bengali, Marathi, Punjabi, Gujarati, Odia,
-Assamese and Urdu. Languages live in `src/app/data/languages.ts`:
+Assamese and Bhojpuri. Each language searches only its Indian film industry
+(Bollywood, Kollywood, Tollywood, Sandalwood, Mollywood, Pollywood, Dhollywood, Ollywood …).
+
+**What never appears, in any language** (see `BLOCKED` in `archive.service.ts`): religious
+recitations and devotional recordings of every faith, talks/lectures/podcasts, karaoke and
+instrumental versions, Arabic-script uploads, and uploads from outside India. Languages live in `src/app/data/languages.ts`:
 
 - `searchWords`: the archive.org words that mark that language's music
 - `tagline`: the line under the headline

@@ -21,7 +21,7 @@ import { CLASSICAL_DRIVE } from './classical-drive';
  */
 
 /** Words that mark an upload as Hindi film music. */
-export const HINDI = '(bollywood OR "hindi film" OR "hindi songs" OR "hindi movie" OR filmi OR hindi)';
+export const HINDI = '((bollywood OR "hindi film" OR "hindi songs" OR "hindi movie" OR filmi OR hindi) AND NOT bhojpuri)';
 
 export const STATIONS: Station[] = [
   // ---- Start here

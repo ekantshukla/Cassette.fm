@@ -1,6 +1,10 @@
-:host { display: block; }
+:host {
+  display: block;
+  position: relative; // desktop: results drop down under the field
+  z-index: 20;
+}
 
-/* Header button (all the header shows until tapped) */
+/* Phones: header button (all the header shows until tapped) */
 .search-btn {
   width: 42px;
   height: 42px;
@@ -16,7 +20,7 @@
   app-icon { width: 19px; height: 19px; }
 }
 
-/* Opened: the field covers the whole header bar (positioned against .bar in the header) */
+/* Phones, opened: the field covers the whole header (positioned against the sticky header) */
 .overlay {
   position: absolute;
   inset: 0;
@@ -75,8 +79,8 @@ input {
 
 .results {
   position: absolute;
-  left: max(var(--gutter), env(safe-area-inset-left, 0px));
-  right: max(var(--gutter), env(safe-area-inset-right, 0px));
+  left: 0;
+  right: 0;
   top: calc(100% + 8px);
   max-height: min(65vh, 520px);
   overflow-y: auto;
@@ -148,14 +152,10 @@ input {
   text-overflow: ellipsis;
 }
 
-@media (min-width: 901px) {
-  // Desktop: keep the field and results a comfortable width, centred
-  .overlay { justify-content: center; }
-  .overlay .field { flex: 0 1 640px; }
-  .results { left: 50%; right: auto; width: min(640px, calc(100% - 2 * var(--gutter))); transform: translateX(-50%); }
-}
 
 @media (max-width: 600px) {
+  :host { position: static; }
+  .overlay .results { left: max(var(--gutter), env(safe-area-inset-left, 0px)); right: max(var(--gutter), env(safe-area-inset-right, 0px)); }
   .search-btn { width: 38px; height: 40px; border: 0; background: transparent; }
   .search-btn app-icon { width: 21px; height: 21px; }
   .field { height: 40px; padding: 0 12px; gap: 8px; }

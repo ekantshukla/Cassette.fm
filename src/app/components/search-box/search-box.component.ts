@@ -1,7 +1,7 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { ChangeDetectionStrategy, Component, ElementRef, computed, inject, signal, viewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, computed, inject, signal, viewChild } from '@angular/core';
 
-import { STATIONS } from '../../data/stations';
+import { HINDI, STATIONS } from '../../data/stations';
 import { ArchiveDoc } from '../../models/archive.model';
 import { Station } from '../../models/station.model';
 import { ArchiveService } from '../../services/archive.service';
@@ -16,7 +16,7 @@ interface AlbumResult { id: string; title: string; artist: string; }
 const SEARCH_DELAY_MS = 400;
 
 /**
- * Search in the header: a button that opens a search field over the header.
+ * Search in the header. Desktop: a search field. Phones: a search button that opens the field over the header.
  * Shows songs from playlists already loaded, plus albums from anywhere on the Internet Archive.
  */
 @Component({
@@ -37,6 +37,8 @@ export class SearchBoxComponent {
   protected readonly text = signal('');
   /** The search field is showing (the header shows only a search button until tapped). */
   protected readonly expanded = signal(false);
+  /** Phones show a search button; desktop shows the field all the time. */
+  protected readonly isPhone = signal(false);
   /** The results list is showing. */
   protected readonly isOpen = signal(false);
   protected readonly albums = signal<AlbumResult[] | null>(null);
@@ -45,6 +47,13 @@ export class SearchBoxComponent {
   private timer?: ReturnType<typeof setTimeout>;
 
   protected readonly query = computed(() => normalize(this.text()));
+
+  constructor() {
+    const phone = matchMedia('(max-width: 600px)');
+    this.isPhone.set(phone.matches);
+    phone.addEventListener('change', e => { this.isPhone.set(e.matches); this.expanded.set(false); });
+    inject(DestroyRef).onDestroy(() => clearTimeout(this.timer));
+  }
   protected readonly highlight = highlight;
 
   /** Songs from loaded playlists: exact matches first, then partial ones. */
@@ -137,7 +146,9 @@ export class SearchBoxComponent {
     this.albumsLoading.set(true);
     this.timer = setTimeout(async () => {
       const words = q.split(' ').map(w => w.replace(/["():\\]/g, '')).filter(Boolean).join(' AND ');
-      const docs = await this.archive.search(`(${words}) AND (bollywood OR hindi OR filmi OR ghazal)`, 12);
+      // Search within the music language picked in the header (Bollywood for Hindi, Sandalwood for Kannada …).
+      const scope = this.library.language().searchWords || HINDI;
+      const docs = await this.archive.search(`(${words}) AND ${scope}`, 12);
       if (this.remoteQuery !== q) return; // the visitor kept typing
       this.albums.set((docs ?? []).map(toAlbum));
       this.albumsLoading.set(false);

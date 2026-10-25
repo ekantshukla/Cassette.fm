@@ -31,6 +31,13 @@ header {
 }
 
 
+.search {
+  flex: 1;
+  max-width: 420px;
+  min-width: 0;
+  margin: 0 auto;
+}
+
 .right {
   display: flex;
   align-items: center;
@@ -39,6 +46,7 @@ header {
 
 @media (max-width: 600px) {
   .right { gap: 4px; }
+  .search { flex: none; max-width: none; margin: 0 0 0 auto; }
 }
 
 .live {

@@ -35,6 +35,7 @@ export interface ArchiveMetadataResponse {
   metadata?: {
     title?: string | string[];
     creator?: string | string[];
+    subject?: string | string[];
     'access-restricted-item'?: string | boolean;
   };
   is_dark?: boolean;

@@ -14,24 +14,31 @@ export interface Language {
   tagline: string;
 }
 
+/** Search words for a language's Indian film/music industry, never other countries' uploads. */
+function industry(language: string, extra: string): string {
+  return `((${language}) AND (film OR movie OR cinema OR songs OR soundtrack OR ${extra}) AND NOT bhojpuri)`;
+}
+
 /*
- * Languages in the switch, in this order. Hindi uses the hand-made playlists in stations.ts;
- * every other language gets the standard set below, built from its search words.
+ * Languages in the switch, in this order. Each one searches only that language's
+ * Indian film industry (Bollywood, Sandalwood, Kollywood …). Hindi uses the hand-made
+ * playlists in stations.ts; every other language gets the standard set below.
+ * Religious, spoken-word and non-Indian uploads are blocked for all of them (archive.service.ts).
  */
 export const LANGUAGES: Language[] = [
-  { code: 'hi', name: 'Hindi',     native: 'हिन्दी',   searchWords: '(bollywood OR "hindi film" OR "hindi songs" OR hindi)', tagline: "Bollywood's greatest hits from the 80s, 90s and 2000s, playing nonstop. No ads." },
-  { code: 'en', name: 'English',   native: 'English',  searchWords: '(english AND (pop OR rock OR hits OR oldies))',           tagline: 'English pop and rock classics from the 80s, 90s and 2000s. No ads.' },
-  { code: 'ta', name: 'Tamil',     native: 'தமிழ்',    searchWords: '(tamil OR kollywood)',                                      tagline: 'Tamil film classics from the 80s, 90s and 2000s, playing nonstop. No ads.' },
-  { code: 'te', name: 'Telugu',    native: 'తెలుగు',   searchWords: '(telugu OR tollywood)',                                     tagline: 'Telugu film classics from the 80s, 90s and 2000s, playing nonstop. No ads.' },
-  { code: 'kn', name: 'Kannada',   native: 'ಕನ್ನಡ',    searchWords: '(kannada OR sandalwood)',                                   tagline: 'Kannada film classics from the 80s, 90s and 2000s, playing nonstop. No ads.' },
-  { code: 'ml', name: 'Malayalam', native: 'മലയാളം',   searchWords: '(malayalam OR mollywood)',                                  tagline: 'Malayalam film classics from the 80s, 90s and 2000s, playing nonstop. No ads.' },
-  { code: 'bn', name: 'Bengali',   native: 'বাংলা',    searchWords: '(bengali OR bangla)',                                       tagline: 'Bengali classics from the 80s, 90s and 2000s, playing nonstop. No ads.' },
-  { code: 'mr', name: 'Marathi',   native: 'मराठी',    searchWords: '(marathi)',                                                 tagline: 'Marathi classics from the 80s, 90s and 2000s, playing nonstop. No ads.' },
-  { code: 'pa', name: 'Punjabi',   native: 'ਪੰਜਾਬੀ',   searchWords: '(punjabi OR bhangra)',                                      tagline: 'Punjabi classics from the 80s, 90s and 2000s, playing nonstop. No ads.' },
-  { code: 'gu', name: 'Gujarati',  native: 'ગુજરાતી',  searchWords: '(gujarati)',                                                tagline: 'Gujarati classics from the 80s, 90s and 2000s, playing nonstop. No ads.' },
-  { code: 'or', name: 'Odia',      native: 'ଓଡ଼ିଆ',     searchWords: '(odia OR oriya)',                                           tagline: 'Odia classics from the 80s, 90s and 2000s, playing nonstop. No ads.' },
-  { code: 'as', name: 'Assamese',  native: 'অসমীয়া',  searchWords: '(assamese)',                                                tagline: 'Assamese classics from the 80s, 90s and 2000s, playing nonstop. No ads.' },
-  { code: 'ur', name: 'Urdu',      native: 'اردو',     searchWords: '(urdu OR ghazal OR qawwali)',                               tagline: 'Urdu ghazals and classics from the 80s, 90s and 2000s. No ads.' },
+  { code: 'hi',  name: 'Hindi',     native: 'हिन्दी',   searchWords: '', tagline: "Bollywood's greatest hits from the 80s, 90s and 2000s, playing nonstop. No ads." },
+  { code: 'en',  name: 'English',   native: 'English',  searchWords: '((english AND (pop OR rock OR hits OR oldies)) AND NOT bhojpuri)', tagline: 'English pop and rock classics from the 80s, 90s and 2000s. No ads.' },
+  { code: 'ta',  name: 'Tamil',     native: 'தமிழ்',    searchWords: industry('tamil', 'kollywood OR ilaiyaraaja'),           tagline: 'Kollywood classics from the 80s, 90s and 2000s, playing nonstop. No ads.' },
+  { code: 'te',  name: 'Telugu',    native: 'తెలుగు',   searchWords: industry('telugu', 'tollywood'),                       tagline: 'Tollywood (Telugu) classics from the 80s, 90s and 2000s, playing nonstop. No ads.' },
+  { code: 'kn',  name: 'Kannada',   native: 'ಕನ್ನಡ',    searchWords: industry('kannada', 'sandalwood'),                     tagline: 'Sandalwood classics from the 80s, 90s and 2000s, playing nonstop. No ads.' },
+  { code: 'ml',  name: 'Malayalam', native: 'മലയാളം',   searchWords: industry('malayalam', 'mollywood'),                    tagline: 'Mollywood classics from the 80s, 90s and 2000s, playing nonstop. No ads.' },
+  { code: 'bn',  name: 'Bengali',   native: 'বাংলা',    searchWords: industry('bengali OR bangla', 'tollygunge OR kolkata'), tagline: 'Bengali film classics from Kolkata, 80s to 2000s, playing nonstop. No ads.' },
+  { code: 'mr',  name: 'Marathi',   native: 'मराठी',    searchWords: industry('marathi', 'lavani'),                         tagline: 'Marathi film classics from the 80s, 90s and 2000s, playing nonstop. No ads.' },
+  { code: 'pa',  name: 'Punjabi',   native: 'ਪੰਜਾਬੀ',   searchWords: industry('punjabi', 'pollywood OR bhangra'),           tagline: 'Pollywood and bhangra classics from Indian Punjab. No ads.' },
+  { code: 'gu',  name: 'Gujarati',  native: 'ગુજરાતી',  searchWords: industry('gujarati', 'dhollywood OR garba'),           tagline: 'Dhollywood and garba classics from Gujarat. No ads.' },
+  { code: 'or',  name: 'Odia',      native: 'ଓଡ଼ିଆ',     searchWords: industry('odia OR oriya', 'ollywood'),                  tagline: 'Ollywood classics from the 80s, 90s and 2000s, playing nonstop. No ads.' },
+  { code: 'as',  name: 'Assamese',  native: 'অসমীয়া',  searchWords: industry('assamese', 'jollywood OR bihu'),              tagline: 'Assamese film and Bihu classics. No ads.' },
+  { code: 'bho', name: 'Bhojpuri',  native: 'भोजपुरी',  searchWords: '(bhojpuri AND (film OR movie OR cinema OR songs OR soundtrack))', tagline: 'Bhojpuri cinema hits, playing nonstop. No ads.' },
 ];
 
 export const DEFAULT_LANGUAGE = 'hi';
