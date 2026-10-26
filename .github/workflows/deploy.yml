@@ -30,6 +30,10 @@ jobs:
           cache: npm
       - run: npm ci
 
+      # So the website's "Get the Android app" link points at this repo's releases.
+      - name: Point the site at this repo
+        run: sed -i "s|^export const GITHUB_REPO = .*|export const GITHUB_REPO = '${{ github.repository }}';|" src/app/data/app-info.ts
+
       # Look up every playlist on archive.org now, so visitors get them instantly.
       # If this fails, the site still works: it falls back to looking songs up live.
       - name: Build playlists

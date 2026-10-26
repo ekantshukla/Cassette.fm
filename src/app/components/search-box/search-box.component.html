@@ -10,9 +10,15 @@
 <div class="search-area" [class.overlay]="isPhone()">
   <label class="field" for="search">
     <app-icon name="search" />
-    <input #input id="search" type="search" placeholder="Search songs" autocomplete="off" enterkeyhint="search"
+    <input #input id="search" type="search" [placeholder]="voice.listening() ? 'Listening… say a song' : 'Search songs'" autocomplete="off" enterkeyhint="search"
            aria-controls="search-results"
            (focus)="onFocus()" (input)="onInput(input.value)" (keydown)="onKeydown($event)">
+    @if (voice.supported()) {
+      <button class="mic" type="button" [class.on]="voice.listening()" [attr.aria-pressed]="voice.listening()"
+              [attr.aria-label]="voice.listening() ? 'Stop listening' : 'Search by voice'" (click)="speak($event)">
+        <app-icon name="mic" />
+      </button>
+    }
   </label>
   @if (isPhone()) {
     <button class="icon-btn close-btn" type="button" aria-label="Close search" (click)="close(true)">

@@ -1,0 +1,8 @@
+node_modules/
+dist/
+.angular/
+.scripts/
+*.jks
+*.keystore
+.DS_Store
+android/app/google-services.json

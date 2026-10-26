@@ -19,6 +19,15 @@
   <h2 class="title">{{ song()?.title ?? 'Ready when you are' }}</h2>
   <p class="artist">{{ song() ? song()!.artist : 'Tap play to start' }}</p>
 
+  <!-- Download this song (big and easy to find) -->
+  @if (song()) {
+    <button class="save" type="button" [class.done]="dlState() === 'done'" [class.busy]="dlState() === 'queued' || dlState() === 'downloading'"
+            [style.--dl]="dlProgress() * 100 + '%'" [attr.aria-label]="dlLabel()" (click)="onDownload()">
+      <app-icon [name]="dlState() === 'done' ? 'downloaded' : 'download'" />
+      <span>{{ dlLabel() }}</span>
+    </button>
+  }
+
   <!-- Seek bar -->
   <div class="progress">
     <input class="range" id="seek" type="range" min="0" max="1000" aria-label="Seek"
@@ -51,12 +60,21 @@
     </button>
   </div>
 
-  <!-- Volume -->
+  <!-- Volume, download, sleep timer -->
   <div class="volume">
     <app-icon name="volume" />
     <input class="range" id="volume" type="range" min="0" max="100" aria-label="Volume"
            [value]="player.volume()" [style.--p]="player.volume() + '%'"
            (input)="player.setVolume(+volume.value)" #volume>
+    <button class="icon-btn small sleep" type="button" aria-label="Sleep timer"
+            [class.on]="sleepOn()" (click)="settings.openAt('sleep')">
+      <app-icon name="moon" />
+      @if (player.sleepMinutesLeft()) {
+        <span class="badge">{{ player.sleepMinutesLeft() }}m</span>
+      } @else if (player.sleepAfterSong()) {
+        <span class="badge">end</span>
+      }
+    </button>
   </div>
 
   <div class="credit">Crafted with <span>♥</span> by <b class="author">Ekant Shukla</b></div>

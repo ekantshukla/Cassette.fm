@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, signal } from '@angular/core';
 
 import {
   ArchiveDoc, ArchiveFile, ArchiveMetadataResponse, ArchiveScrapeResponse, ArchiveSearchResponse,
@@ -42,6 +42,8 @@ const ATTEMPTS = 3;
 @Injectable({ providedIn: 'root' })
 export class ArchiveService {
   private readonly baseUrl = 'https://archive.org';
+  /** Album covers saved on the phone with downloaded songs (album ID → local image). */
+  private readonly localCovers = signal<Record<string, string>>({});
 
   /** Albums matching `query`, or null if archive.org couldn't be reached. */
   async search(query: string, rows = 36, page = 1): Promise<ArchiveDoc[] | null> {
@@ -112,9 +114,30 @@ export class ArchiveService {
     return `${this.baseUrl}/download/${encodeURIComponent(song.itemId)}/${path}`;
   }
 
-  /** Album cover (archive.org picks the item's main image). */
+  /**
+   * The same MP3 through archive.org's /cors/ address, which allows the equaliser
+   * (Web Audio) and the website's downloads to read the sound.
+   */
+  corsUrl(song: Song): string {
+    const path = song.file.split('/').map(encodeURIComponent).join('/');
+    return `${this.baseUrl}/cors/${encodeURIComponent(song.itemId)}/${path}`;
+  }
+
+  /** Album cover (archive.org picks the item's main image), or the copy saved on the phone. */
   thumbnailUrl(itemId: string): string {
+    return this.localCovers()[itemId] ?? this.remoteThumbnailUrl(itemId);
+  }
+
+  remoteThumbnailUrl(itemId: string): string {
     return `${this.baseUrl}/services/img/${encodeURIComponent(itemId)}`;
+  }
+
+  setLocalCover(itemId: string, src: string | null): void {
+    this.localCovers.update(map => {
+      const next = { ...map };
+      if (src) next[itemId] = src; else delete next[itemId];
+      return next;
+    });
   }
 
   /** GET a JSON URL, retrying on network errors, "too many requests" and server errors. Null if it never works. */

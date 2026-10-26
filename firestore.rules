@@ -1,0 +1,9 @@
+rules_version = '2';
+// Cassette.fm: each listener can read and change only their own backup (users/<their id>).
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{uid} {
+      allow read, create, update, delete: if request.auth != null && request.auth.uid == uid;
+    }
+  }
+}

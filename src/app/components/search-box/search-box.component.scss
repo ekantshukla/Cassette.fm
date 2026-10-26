@@ -16,7 +16,7 @@
   color: var(--text);
   transition: background 0.2s, border-color 0.2s;
 
-  &:hover, &[aria-expanded='true'] { background: rgba(255, 255, 255, 0.14); border-color: rgba(255, 194, 209, 0.5); }
+  &:hover, &[aria-expanded='true'] { background: rgba(255, 255, 255, 0.14); border-color: rgba(var(--blush-rgb), 0.5); }
   app-icon { width: 19px; height: 19px; }
 }
 
@@ -30,7 +30,7 @@
   gap: 8px;
   padding-left: max(var(--gutter), env(safe-area-inset-left, 0px));
   padding-right: max(var(--gutter), env(safe-area-inset-right, 0px));
-  background: #1a0e2c;
+  background: var(--surface);
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   animation: open-search 0.18s ease-out;
 
@@ -55,12 +55,47 @@
   transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
 
   &:focus-within {
-    border-color: rgba(255, 194, 209, 0.6);
+    border-color: rgba(var(--blush-rgb), 0.6);
     background: rgba(255, 255, 255, 0.13);
-    box-shadow: 0 0 0 4px rgba(255, 111, 145, 0.15);
+    box-shadow: 0 0 0 4px rgba(var(--rose-rgb), 0.15);
   }
 
   app-icon { width: 20px; height: 20px; }
+}
+
+.mic {
+  flex: none;
+  position: relative;
+  width: 34px;
+  height: 34px;
+  margin-right: -8px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--muted);
+  transition: background 0.15s, color 0.15s;
+
+  &:hover { background: var(--glass-2); color: var(--text); }
+  app-icon { width: 19px; height: 19px; }
+
+  &.on {
+    background: var(--rose);
+    color: var(--ink-on-rose);
+    &::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      animation: mic-pulse 1.3s ease-out infinite;
+    }
+  }
+}
+
+@keyframes mic-pulse {
+  from { box-shadow: 0 0 0 0 rgba(var(--rose-rgb), 0.6); }
+  to { box-shadow: 0 0 0 12px rgba(var(--rose-rgb), 0); }
 }
 
 input {
@@ -86,7 +121,7 @@ input {
   overflow-y: auto;
   padding: 8px;
   border-radius: 20px;
-  background: #1e0e30;
+  background: var(--surface);
   border: 1px solid var(--line);
   box-shadow: 0 24px 60px -16px rgba(0, 0, 0, 0.8);
 }

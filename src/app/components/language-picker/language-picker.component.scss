@@ -19,7 +19,7 @@
   white-space: nowrap;
   transition: background 0.2s, border-color 0.2s;
 
-  &:hover, &[aria-expanded='true'] { background: rgba(255, 255, 255, 0.14); border-color: rgba(255, 194, 209, 0.5); }
+  &:hover, &[aria-expanded='true'] { background: rgba(255, 255, 255, 0.14); border-color: rgba(var(--blush-rgb), 0.5); }
   .globe { width: 18px; height: 18px; color: var(--blush); }
   .chevron { width: 14px; height: 14px; color: var(--muted); }
 }

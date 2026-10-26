@@ -4,14 +4,13 @@
   position: fixed;
   inset: 0;
   z-index: -3;
-  background:
-    radial-gradient(60% 50% at 15% 10%, rgba(255, 111, 145, 0.45), transparent 70%),
-    radial-gradient(50% 45% at 90% 25%, rgba(155, 89, 255, 0.35), transparent 70%),
-    radial-gradient(70% 60% at 50% 110%, rgba(255, 170, 120, 0.3), transparent 70%),
-    linear-gradient(180deg, #1a0f33 0%, #2a1240 45%, #160b29 100%);
+  background: var(--sky);
+  transition: background 0.4s;
 }
 
 canvas {
+  transition: opacity 0.4s;
+  &.off { opacity: 0; }
   position: fixed;
   inset: 0;
   z-index: -2;

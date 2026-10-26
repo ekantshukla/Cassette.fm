@@ -64,3 +64,10 @@ export function highlight(text: string, query: string): HighlightParts {
   if (at < 0) return { before: text, match: '', after: '' };
   return { before: text.slice(0, at), match: text.slice(at, at + query.length), after: text.slice(at + query.length) };
 }
+
+/** 5_500_000 → "5.2 MB", 1.2e9 → "1.1 GB" */
+export function formatBytes(bytes: number): string {
+  if (bytes < 1024 * 1024) return `${Math.max(0, Math.round(bytes / 1024))} KB`;
+  if (bytes < 1024 ** 3) return `${(bytes / 1024 ** 2).toFixed(bytes < 10 * 1024 ** 2 ? 1 : 0)} MB`;
+  return `${(bytes / 1024 ** 3).toFixed(1)} GB`;
+}

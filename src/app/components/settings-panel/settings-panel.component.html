@@ -1,0 +1,173 @@
+<div class="scrim" [class.open]="settings.open()" (click)="close()"></div>
+
+<aside class="panel" id="settings-panel" role="dialog" aria-label="Settings" [class.open]="settings.open()"
+       [attr.aria-hidden]="!settings.open()" [attr.inert]="settings.open() ? null : ''">
+  <div class="head">
+    <h2>Settings</h2>
+    <button class="icon-btn close" type="button" aria-label="Close settings" (click)="close()">
+      <app-icon name="close" />
+    </button>
+  </div>
+
+  <div class="body">
+    <!-- ================= Account ================= -->
+    @if (account.enabled) {
+      <section data-section="account">
+        @if (account.user(); as user) {
+          <div class="profile">
+            <div class="avatar">{{ account.initials() }}</div>
+            <div class="who">
+              @if (editingName()) {
+                <input class="name-input" type="text" aria-label="Your name" [value]="account.displayName()" #nameInput
+                       (keydown.enter)="saveName(nameInput.value)" (blur)="saveName(nameInput.value)">
+              } @else {
+                <b>{{ account.displayName() }} <button type="button" class="edit" (click)="editingName.set(true)">Edit</button></b>
+              }
+              <small>{{ account.contact() }}</small>
+              @if (syncText()) { <small class="sync" [class.err]="account.sync() === 'error'">{{ syncText() }}</small> }
+            </div>
+          </div>
+          @if (user.email && !user.emailVerified && !(user.providerData ?? []).length) {
+            <p class="hint">Check your inbox to confirm your email.</p>
+          }
+          <div class="account-actions">
+            <button class="chip" type="button" (click)="logOut()">Log out</button>
+            <button class="danger small" type="button" (click)="deleteAccount()"><app-icon name="trash" /> {{ deleteLabel() }}</button>
+          </div>
+        } @else {
+          <button class="sign-in-card" type="button" (click)="openSignIn()">
+            <div class="avatar empty">♪</div>
+            <span><b>Log in or sign up free</b><small>Keep your liked songs and settings on every phone</small></span>
+          </button>
+        }
+      </section>
+    }
+
+    <!-- ================= Look ================= -->
+    <section data-section="look">
+      <h3>Look</h3>
+
+      <div class="label">Colour</div>
+      <div class="swatches" role="radiogroup" aria-label="Colour">
+        @for (a of accents; track a.key) {
+          <button class="swatch" type="button" role="radio" [attr.aria-checked]="settings.accent().key === a.key"
+                  [attr.aria-label]="a.name" [style.--c1]="a.rose" [style.--c2]="a.rose2" (click)="settings.setAccent(a.key)">
+            <i></i><span>{{ a.name }}</span>
+          </button>
+        }
+      </div>
+
+      <div class="label">Background</div>
+      <div class="skies" role="radiogroup" aria-label="Background">
+        @for (sky of skies; track sky.key) {
+          <button class="sky" type="button" role="radio" [attr.aria-checked]="settings.sky() === sky.key"
+                  [style.--preview]="sky.preview" (click)="settings.setSky(sky.key)">
+            <i></i><span>{{ sky.name }}</span>
+          </button>
+        }
+      </div>
+
+      <label class="toggle">
+        <span><b>Floating lights</b><small>The soft glowing lights behind everything. Off saves battery.</small></span>
+        <input type="checkbox" role="switch" [checked]="settings.lights()" (change)="settings.setLights($any($event.target).checked)">
+        <i></i>
+      </label>
+    </section>
+
+    <!-- ================= Sound ================= -->
+    <section data-section="sound">
+      <h3>Sound</h3>
+
+      <div class="label">Equaliser</div>
+      <div class="chips">
+        @for (p of presets; track p.key) {
+          <button class="chip" type="button" [class.on]="settings.eqPreset() === p.key" (click)="settings.setEqPreset(p.key)">{{ p.name }}</button>
+        }
+        @if (settings.eqPreset() === custom) {
+          <span class="chip on static">Custom</span>
+        }
+      </div>
+      <div class="bands">
+        @for (label of bandLabels; track label; let i = $index) {
+          @let v = bandValue(i);
+          <div class="band">
+            <span class="hz">{{ label }}</span>
+            <input class="range" type="range" min="-12" max="12" step="1" [attr.aria-label]="'Equaliser ' + label + ' Hz'"
+                   [value]="v" [style.--p]="((v + 12) / 24) * 100 + '%'" (input)="settings.setEqBand(i, +$any($event.target).value)">
+            <span class="db">{{ v > 0 ? '+' + v : v }}</span>
+          </div>
+        }
+      </div>
+
+      <label class="toggle">
+        <span><b>Even out loudness</b><small>Old uploads are often too quiet or too loud. This keeps them level.</small></span>
+        <input type="checkbox" role="switch" [checked]="settings.evenLoudness()" (change)="settings.setEvenLoudness($any($event.target).checked)">
+        <i></i>
+      </label>
+
+      <div class="label">Fade between songs</div>
+      <div class="chips">
+        @for (s of fadeChoices; track s) {
+          <button class="chip" type="button" [class.on]="settings.fadeSeconds() === s" (click)="settings.setFadeSeconds(s)">{{ s ? s + ' sec' : 'Off' }}</button>
+        }
+      </div>
+      <p class="hint">The end of each song fades out and the next one fades in.</p>
+    </section>
+
+    <!-- ================= Sleep timer ================= -->
+    <section data-section="sleep">
+      <h3><app-icon name="moon" /> Sleep timer</h3>
+      <div class="chips">
+        <button class="chip" type="button" [class.on]="!player.sleepAt() && !player.sleepAfterSong()" (click)="setSleep(null)">Off</button>
+        @for (m of sleepChoices; track m) {
+          <button class="chip" type="button" (click)="setSleep(m)">{{ m }} min</button>
+        }
+        <button class="chip" type="button" [class.on]="player.sleepAfterSong()" (click)="setSleep('song')">End of song</button>
+      </div>
+      @if (player.sleepMinutesLeft()) {
+        <p class="hint on">Music stops in about {{ player.sleepMinutesLeft() }} min. It fades out gently.</p>
+      } @else if (player.sleepAfterSong()) {
+        <p class="hint on">Music stops when this song ends.</p>
+      }
+    </section>
+
+    <!-- ================= Downloads ================= -->
+    <section data-section="downloads">
+      <h3><app-icon name="download" /> Downloads</h3>
+      <div class="storage">
+        <div><b>{{ storageText() }}</b><small>{{ native.isApp ? 'Saved inside the app. Plays without internet.' : 'Saved in this browser. Plays without internet.' }}</small></div>
+        <button class="pill" type="button" (click)="openDownloads()">Open</button>
+      </div>
+
+      @if (native.isApp) {
+        <label class="toggle">
+          <span><b>Download on Wi-Fi only</b><small>Saves your mobile data. Turn off to download on mobile data too.</small></span>
+          <input type="checkbox" role="switch" [checked]="settings.wifiOnly()" (change)="settings.setWifiOnly($any($event.target).checked)">
+          <i></i>
+        </label>
+      }
+      <label class="toggle">
+        <span><b>Download liked songs</b><small>Every song you ♥ is saved for offline automatically.</small></span>
+        <input type="checkbox" role="switch" [checked]="settings.autoDownloadLiked()" (change)="settings.setAutoDownloadLiked($any($event.target).checked)">
+        <i></i>
+      </label>
+
+      @if (downloads.count()) {
+        <button class="danger" type="button" (click)="removeAll()"><app-icon name="trash" /> {{ removeLabel() }}</button>
+      }
+    </section>
+
+    <!-- ================= About ================= -->
+    <section class="about">
+      @if (!native.isApp) {
+        <a class="get-app" [href]="apkUrl" rel="noopener">
+          <app-icon name="android" />
+          <span><b>Get the Android app</b><small>Download songs and listen offline</small></span>
+        </a>
+      }
+      <p>Cassette.fm {{ native.isApp ? 'app' : '' }} v{{ version }} · Songs from the Internet Archive, no ads.<br>
+        Crafted with ♥ by <b class="author">Ekant Shukla</b></p>
+      <button class="link" type="button" (click)="resetLook()">Reset settings</button>
+    </section>
+  </div>
+</aside>

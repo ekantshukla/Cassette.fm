@@ -1,8 +1,11 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 
+import { Capacitor } from '@capacitor/core';
+
+import { WEBSITE_URL } from '../data/app-info';
 import { SongRequest } from '../data/classical-drive';
 import { ALL_STATIONS, DEFAULT_LANGUAGE, Language, findLanguage, stationsFor } from '../data/languages';
-import { CACHE_DAYS, LIKED_STATION, MAX_SONGS, MIN_SONGS_BEFORE_BACKUP, STATIONS } from '../data/stations';
+import { CACHE_DAYS, DOWNLOADS_STATION, LIKED_STATION, MAX_SONGS, MIN_SONGS_BEFORE_BACKUP, STATIONS } from '../data/stations';
 import { ArchiveDoc } from '../models/archive.model';
 import { Song, songKey } from '../models/song.model';
 import { Station, StationGroup } from '../models/station.model';
@@ -69,6 +72,8 @@ export class LibraryService {
   private readonly temporaryStation = signal<Station | null>(null);
 
   readonly liked = signal<Song[]>(this.readLiked());
+  /** Songs saved on this phone. Filled by DownloadsService. */
+  readonly downloaded = signal<Song[]>([]);
   /** The music language the visitor picked (the switch in the header). */
   readonly language = signal<Language>(findLanguage(this.storage.get(KEY_LANGUAGE, DEFAULT_LANGUAGE)));
   /** Playlists shown in the menu, for the current language. "Liked" has its own button next to the headline. */
@@ -88,6 +93,7 @@ export class LibraryService {
     const temp = this.temporaryStation();
     if (temp?.key === key) return temp;
     if (key === LIKED_STATION.key) return LIKED_STATION;
+    if (key === DOWNLOADS_STATION.key) return DOWNLOADS_STATION;
     // Look in every language, so a song saved from another language still resumes after a refresh.
     return this.stations().find(s => s.key === key) ?? ALL_STATIONS.find(s => s.key === key);
   }
@@ -100,7 +106,9 @@ export class LibraryService {
   }
 
   songsFor(key: string): Song[] {
-    return key === LIKED_STATION.key ? this.liked() : (this.songsByStation()[key] ?? []);
+    if (key === LIKED_STATION.key) return this.liked();
+    if (key === DOWNLOADS_STATION.key) return this.downloaded();
+    return this.songsByStation()[key] ?? [];
   }
 
   isLoading(key: string): boolean {
@@ -153,7 +161,7 @@ export class LibraryService {
   }
 
   isFinished(key: string): boolean {
-    return key === LIKED_STATION.key || this.loadingByStation()[key] === false;
+    return key === LIKED_STATION.key || key === DOWNLOADS_STATION.key || this.loadingByStation()[key] === false;
   }
 
   /** Opens a playlist in the song list and starts loading its songs. */
@@ -172,7 +180,7 @@ export class LibraryService {
    * Safe to call repeatedly.
    */
   async load(station: Station): Promise<void> {
-    if (station.isLiked || this.loadingByStation()[station.key] !== undefined) return;
+    if (station.isLiked || station.isDownloads || this.loadingByStation()[station.key] !== undefined) return;
 
     if (!station.isTemporary) {
       this.setLoading(station.key, true);
@@ -254,6 +262,12 @@ export class LibraryService {
     return !wasLiked;
   }
 
+  /** Replaces all liked songs (used when an account's likes are loaded). */
+  replaceLiked(songs: Song[]): void {
+    this.liked.set(songs);
+    this.storage.set(KEY_LIKED, songs);
+  }
+
   /** Every known song across all playlists (loaded or cached), for the search box. */
   readonly searchable = computed<SongMatch[]>(() => {
     const loaded = this.songsByStation();
@@ -279,12 +293,30 @@ export class LibraryService {
     if (!this.prebuilt) {
       this.prebuilt = typeof document === 'undefined'
         ? Promise.resolve(null) // running in the build script itself
-        : fetch(PREBUILT_URL)
-            .then(res => (res.ok ? (res.json() as Promise<PrebuiltPlaylists>) : null))
-            .then(file => (file?.version === PLAYLISTS_VERSION ? file.playlists : null))
-            .catch(() => null);
+        : this.fetchPrebuilt();
     }
     return this.prebuilt;
+  }
+
+  /**
+   * The website ships its own playlists.json. The Android app carries a copy too (so it works
+   * offline), but first tries the live website's, which GitHub refreshes every day.
+   */
+  private async fetchPrebuilt(): Promise<Record<string, Song[]> | null> {
+    const read = (url: string, timeoutMs?: number) => {
+      const abort = new AbortController();
+      const timer = timeoutMs ? setTimeout(() => abort.abort(), timeoutMs) : undefined;
+      return fetch(url, { signal: abort.signal, cache: 'no-cache' })
+        .then(res => (res.ok ? (res.json() as Promise<PrebuiltPlaylists>) : null))
+        .then(file => (file?.version === PLAYLISTS_VERSION ? file.playlists : null))
+        .catch(() => null)
+        .finally(() => clearTimeout(timer));
+    };
+    if (Capacitor.isNativePlatform() && navigator.onLine) {
+      const live = await read(`${WEBSITE_URL}${PREBUILT_URL}`, 5000);
+      if (live) return live;
+    }
+    return read(PREBUILT_URL);
   }
 
   /**

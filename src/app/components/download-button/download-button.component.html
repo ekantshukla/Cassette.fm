@@ -1,0 +1,13 @@
+<button class="icon-btn small dl" type="button" [attr.aria-label]="label()" [title]="label()"
+        [class.done]="state() === 'done'" (click)="onClick($event)" (keydown.enter)="$event.stopPropagation()">
+  @switch (state()) {
+    @case ('none') { <app-icon name="download" /> }
+    @case ('done') { <app-icon name="downloaded" /> }
+    @default {
+      <svg class="ring" viewBox="0 0 24 24" aria-hidden="true" [class.waiting]="state() === 'queued'">
+        <circle cx="12" cy="12" r="9" class="track" />
+        <circle cx="12" cy="12" r="9" class="fill" [attr.stroke-dasharray]="dash()" />
+      </svg>
+    }
+  }
+</button>

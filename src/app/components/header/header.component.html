@@ -6,6 +6,14 @@
 
     <div class="right">
       <app-language-picker />
+      <button class="gear" type="button" aria-label="Settings" aria-controls="settings-panel"
+              [attr.aria-expanded]="settings.open()" (click)="settings.openAt()">
+        @if (account.user()) {
+          <span class="me">{{ account.initials() }}</span>
+        } @else {
+          <app-icon name="settings" />
+        }
+      </button>
       <div class="live" [class.on]="player.isPlaying()">
         <b></b><span>{{ liveText() }}</span>
       </div>

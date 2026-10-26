@@ -1,7 +1,20 @@
 <section class="panel glass" aria-label="Songs">
   <div class="head">
-    <h2>{{ heading() }}</h2>
-    <span class="count">{{ countText() }}</span>
+    <div class="title">
+      <h2>{{ heading() }}</h2>
+      <span class="count">{{ countText() }}</span>
+    </div>
+    @if (downloadAction(); as action) {
+      <button class="save-all" type="button" [class.armed]="confirming()" [class.busy]="action.kind === 'busy'"
+              [disabled]="action.kind === 'done'" (click)="onDownloadAll()">
+        @if (action.kind === 'busy') {
+          <span class="spinner"></span>
+        } @else {
+          <app-icon [name]="action.kind === 'done' ? 'downloaded' : 'download'" />
+        }
+        <span>{{ action.label }}</span>
+      </button>
+    }
   </div>
 
   <ol class="list" [class.playing]="player.isPlaying() && !player.isTuning()">
@@ -16,6 +29,7 @@
             <b>{{ song.title }}</b>
             <span>{{ song.artist || song.album }}</span>
           </span>
+          <app-download-button [song]="song" />
           <button class="icon-btn small heart" type="button" aria-label="Like"
                   [class.on]="liked" [attr.aria-pressed]="liked" (click)="toggleLike($event, song)">
             <app-icon name="heart-filled" />
@@ -35,13 +49,19 @@
       }
     } @else if (station().isLiked) {
       <li class="empty">Tap ♥ on any song to keep it here.</li>
+    } @else if (station().isDownloads) {
+      <li class="empty">
+        <b>Listen without internet</b>
+        Tap <app-icon name="download" class="inline" /> next to any song, or <em>Download</em> at the top of a playlist.
+        Downloaded songs play on flights, trains and long drives.
+      </li>
     } @else if (finished()) {
       <li class="empty">Couldn't find songs for this playlist right now. Check your internet, or try another one.</li>
     } @else {
       @for (p of placeholders; track $index) {
         <li class="row skeleton">
           <span class="number"></span><span class="thumb"></span>
-          <span class="info"><b>&nbsp;</b><span>&nbsp;</span></span><span></span>
+          <span class="info"><b>&nbsp;</b><span>&nbsp;</span></span><span></span><span></span>
         </li>
       }
     }

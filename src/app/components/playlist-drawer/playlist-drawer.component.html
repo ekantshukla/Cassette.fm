@@ -8,6 +8,18 @@
     </button>
   </div>
 
+  <div class="group">Your library</div>
+  @for (station of mine; track station.key) {
+    <button class="item" type="button" [attr.data-key]="station.key"
+            [attr.aria-current]="library.selected().key === station.key" (click)="pick(station)">
+      <span class="tile" [style.--c]="station.color">{{ station.mark }}</span>
+      <span class="text">
+        <b>{{ station.isLiked ? 'Liked songs' : station.name }}</b>
+        <span>{{ station.isLiked ? library.liked().length + ' songs' : downloads.count() + ' songs · plays offline' }}</span>
+      </span>
+    </button>
+  }
+
   @for (group of library.groups(); track group.name) {
     <div class="group">{{ group.name }}</div>
     @for (station of group.stations; track station.key) {
@@ -21,6 +33,10 @@
         </span>
       </button>
     }
+  }
+
+  @if (!native.isApp) {
+    <a class="get-app" [href]="apkUrl" rel="noopener">⤓ Get the Android app <span>listen offline</span></a>
   }
 
   <p class="tip">

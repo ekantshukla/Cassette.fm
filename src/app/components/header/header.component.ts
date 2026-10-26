@@ -1,6 +1,8 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
 
 import { PlayerService } from '../../services/player.service';
+import { AccountService } from '../../services/account.service';
+import { SettingsService } from '../../services/settings.service';
 import { IconComponent } from '../icon/icon.component';
 import { LanguagePickerComponent } from '../language-picker/language-picker.component';
 import { SearchBoxComponent } from '../search-box/search-box.component';
@@ -15,6 +17,8 @@ import { SearchBoxComponent } from '../search-box/search-box.component';
 })
 export class HeaderComponent {
   protected readonly player = inject(PlayerService);
+  protected readonly settings = inject(SettingsService);
+  protected readonly account = inject(AccountService);
 
   readonly menuOpen = input(false);
   readonly menuClick = output<void>();

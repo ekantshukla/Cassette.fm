@@ -1,8 +1,13 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, afterNextRender, inject, viewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, afterNextRender, effect, inject, signal, viewChild } from '@angular/core';
+
+import { SettingsService, hexToRgb } from '../../services/settings.service';
 
 interface Orb { x: number; y: number; r: number; color: string; alpha: number; vx: number; vy: number; twinkle: number; }
 
-const COLORS = ['255,111,145', '255,194,209', '255,215,163', '180,120,255', '255,150,120'];
+/** Colours of the lights: the accent colour, its tints, and a soft violet. */
+function lightColours(rose: string, blush: string, gold: string): string[] {
+  return [hexToRgb(rose), hexToRgb(blush), hexToRgb(gold), '180, 120, 255', hexToRgb(rose)];
+}
 
 /** Dusk sky with soft glowing lights drifting upward, behind everything. */
 @Component({
@@ -14,9 +19,20 @@ const COLORS = ['255,111,145', '255,194,209', '255,215,163', '180,120,255', '255
 export class BokehBackgroundComponent {
   private readonly canvas = viewChild.required<ElementRef<HTMLCanvasElement>>('canvas');
   private readonly destroyRef = inject(DestroyRef);
+  private readonly settings = inject(SettingsService);
+  /** Set once the canvas is ready: restarts or stops the animation. */
+  private readonly control = signal<{ recolour: (c: string[]) => void; setOn: (on: boolean) => void } | null>(null);
 
   constructor() {
     afterNextRender(() => this.start());
+    effect(() => {
+      const control = this.control();
+      const a = this.settings.accent();
+      const on = this.settings.lights();
+      if (!control) return;
+      control.recolour(lightColours(a.rose, a.blush, a.gold));
+      control.setOn(on);
+    });
   }
 
   private start(): void {
@@ -25,7 +41,8 @@ export class BokehBackgroundComponent {
     if (!ctx) return;
 
     const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
-    let width = 0, height = 0, orbs: Orb[] = [], frame = 0;
+    let width = 0, height = 0, orbs: Orb[] = [], frame = 0, on = true;
+    let colours = lightColours('#ff6f91', '#ffc2d1', '#ffd7a3');
 
     const resize = () => {
       const ratio = Math.min(devicePixelRatio || 1, 2);
@@ -39,7 +56,7 @@ export class BokehBackgroundComponent {
         x: Math.random() * width,
         y: Math.random() * height,
         r: 6 + Math.random() * Math.random() * 70,
-        color: COLORS[Math.floor(Math.random() * COLORS.length)],
+        color: colours[Math.floor(Math.random() * colours.length)],
         alpha: 0.05 + Math.random() * 0.22,
         vx: (Math.random() - 0.5) * 0.12,
         vy: -0.05 - Math.random() * 0.18,
@@ -68,7 +85,7 @@ export class BokehBackgroundComponent {
         ctx.fill();
       }
       ctx.globalCompositeOperation = 'source-over';
-      if (!still) frame = requestAnimationFrame(draw);
+      if (!still && on) frame = requestAnimationFrame(draw);
     };
 
     const onResize = () => { resize(); if (still) draw(); };
@@ -76,5 +93,16 @@ export class BokehBackgroundComponent {
     draw();
     addEventListener('resize', onResize);
     this.destroyRef.onDestroy(() => { cancelAnimationFrame(frame); removeEventListener('resize', onResize); });
+
+    this.control.set({
+      recolour: c => { colours = c; orbs.forEach(o => (o.color = c[Math.floor(Math.random() * c.length)])); if (still || !on) draw(); },
+      setOn: value => {
+        if (value === on) return;
+        on = value;
+        canvas.classList.toggle('off', !on);
+        cancelAnimationFrame(frame);
+        if (on) draw();
+      },
+    });
   }
 }

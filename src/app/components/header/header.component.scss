@@ -6,7 +6,7 @@
 }
 
 header {
-  background: linear-gradient(rgba(22, 12, 40, 0.82), rgba(22, 12, 40, 0.5));
+  background: linear-gradient(var(--header-1), var(--header-2));
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
@@ -64,9 +64,30 @@ header {
 }
 
 @keyframes pulse {
-  0% { box-shadow: 0 0 0 0 rgba(255, 111, 145, 0.7); }
-  70% { box-shadow: 0 0 0 8px rgba(255, 111, 145, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(255, 111, 145, 0); }
+  0% { box-shadow: 0 0 0 0 rgba(var(--rose-rgb), 0.7); }
+  70% { box-shadow: 0 0 0 8px rgba(var(--rose-rgb), 0); }
+  100% { box-shadow: 0 0 0 0 rgba(var(--rose-rgb), 0); }
+}
+
+.gear {
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.09);
+  display: grid;
+  place-items: center;
+  color: var(--text);
+  transition: background 0.15s, border-color 0.15s;
+
+  &:hover, &[aria-expanded='true'] { background: rgba(255, 255, 255, 0.14); border-color: rgba(var(--blush-rgb), 0.5); }
+  app-icon { width: 20px; height: 20px; }
+  .me {
+    width: 32px; height: 32px; border-radius: 50%;
+    display: grid; place-items: center;
+    background: linear-gradient(135deg, var(--rose), var(--rose-2));
+    color: var(--ink-on-rose); font-size: 12px; font-weight: 700;
+  }
 }
 
 .menu-btn {
@@ -92,6 +113,8 @@ header {
   .bar { gap: 10px; padding-block: 10px; }
   .logo { font-size: 28px; letter-spacing: -0.02em; }
   .menu-btn { width: 36px; height: 40px; place-items: center end; padding: 0; }
+  .gear { width: 38px; height: 40px; border: 0; background: transparent; }
+  .gear app-icon { width: 22px; height: 22px; }
   .menu-btn app-icon { width: 22px; height: 22px; }
 }
 

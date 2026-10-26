@@ -23,7 +23,7 @@
     radial-gradient(circle, transparent 0 31%, rgba(255, 255, 255, 0.05) 31.5%, transparent 32%),
     repeating-radial-gradient(circle, #141018 0 1.2px, #1d1822 1.6px 2.6px),
     #111;
-  box-shadow: 0 25px 60px -20px rgba(0, 0, 0, 0.8), 0 0 0 6px rgba(255, 255, 255, 0.04), 0 0 80px -10px rgba(255, 111, 145, 0.35);
+  box-shadow: 0 25px 60px -20px rgba(0, 0, 0, 0.8), 0 0 0 6px rgba(255, 255, 255, 0.04), 0 0 80px -10px rgba(var(--rose-rgb), 0.35);
   animation: spin 6s linear infinite;
   animation-play-state: paused;
 
@@ -111,6 +111,39 @@
   text-overflow: ellipsis;
 }
 
+/* ---- Download this song ---- */
+.save {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: fit-content;
+  max-width: 100%;
+  margin: 14px auto 0;
+  padding: 9px 18px 9px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(var(--rose-rgb), 0.55);
+  // progress fills the button from the left while downloading
+  background:
+    linear-gradient(90deg, rgba(var(--rose-rgb), 0.35) var(--dl, 0%), transparent var(--dl, 0%)),
+    rgba(var(--rose-rgb), 0.12);
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 600;
+  transition: background 0.3s, border-color 0.2s, transform 0.12s;
+
+  app-icon { width: 20px; height: 20px; color: var(--rose); }
+  &:hover { border-color: var(--rose); }
+  &:active { transform: scale(0.97); }
+  &.busy { cursor: progress; }
+  &.done {
+    border-color: transparent;
+    background: rgba(var(--rose-rgb), 0.2);
+    color: var(--blush);
+    font-weight: 500;
+  }
+}
+
 /* ---- Seek, controls, volume ---- */
 .progress { margin-top: 22px; }
 
@@ -138,8 +171,27 @@
   margin-top: 14px;
   color: var(--muted);
 
-  app-icon { width: 16px; height: 16px; }
+  > app-icon { width: 16px; height: 16px; }
   .range { flex: 1; }
+  .icon-btn { margin: -8px -4px; }
+}
+
+.sleep {
+  position: relative;
+  color: var(--faint);
+
+  app-icon { width: 19px; height: 19px; }
+  &.on { color: var(--rose); }
+  .badge {
+    position: absolute;
+    right: -4px;
+    top: -2px;
+    padding: 1px 5px;
+    border-radius: 999px;
+    background: var(--rose);
+    color: var(--ink-on-rose);
+    font: 600 9px/1.4 var(--mono);
+  }
 }
 
 .credit {

@@ -3,7 +3,11 @@ import { Injectable, computed, effect, inject, signal, untracked } from '@angula
 import { Song, songKey } from '../models/song.model';
 import { Station } from '../models/station.model';
 import { ArchiveService } from './archive.service';
+import { AudioFxService } from './audio-fx.service';
+import { DownloadsService } from './downloads.service';
 import { LibraryService } from './library.service';
+import { NativeService } from './native.service';
+import { SettingsService } from './settings.service';
 import { StorageService } from './storage.service';
 import { ToastService } from './toast.service';
 
@@ -16,6 +20,8 @@ const MAX_SKIPS = 6;
 const KEY_RESUME = 'osfm.resume';
 /** How often the playing position is saved while a song plays. */
 const SAVE_EVERY_MS = 5000;
+/** The sleep timer turns the music down over this long before stopping. */
+const SLEEP_FADE_MS = 10000;
 
 interface SavedPlayback {
   stationKey: string;
@@ -37,6 +43,10 @@ export class PlayerService {
   private readonly library = inject(LibraryService);
   private readonly storage = inject(StorageService);
   private readonly toast = inject(ToastService);
+  private readonly downloads = inject(DownloadsService);
+  private readonly native = inject(NativeService);
+  private readonly settings = inject(SettingsService);
+  private readonly fx = inject(AudioFxService);
 
   private readonly audio = new Audio();
 
@@ -51,6 +61,17 @@ export class PlayerService {
   readonly volume = signal<number>(this.storage.get(KEY_VOLUME, 80));
   /** True once the visitor has pressed play at least once. */
   readonly started = signal(false);
+
+  /** Sleep timer: when the music stops (ms timestamp), or null. */
+  readonly sleepAt = signal<number | null>(null);
+  /** Sleep timer set to "end of this song". */
+  readonly sleepAfterSong = signal(false);
+  /** Ticks every second while a sleep timer runs, for the countdown. */
+  private readonly clock = signal(Date.now());
+  readonly sleepMinutesLeft = computed(() => {
+    const at = this.sleepAt();
+    return at ? Math.max(1, Math.ceil((at - this.clock()) / 60000)) : 0;
+  });
 
   /** Playlist the current song comes from. */
   private readonly queueKey = signal('');
@@ -68,10 +89,19 @@ export class PlayerService {
   /** Second to jump to once a restored song is ready. */
   private resumeAt = 0;
   private lastSave = 0;
+  /** Changes with every song, so a slow-loading saved song can't replace a newer one. */
+  private loadToken = 0;
+  /** The song changed because the last one ended (fades only happen then). */
+  private autoAdvance = false;
+  private fadingIn = false;
+  /** Song fade (0…1) and sleep-timer fade (0…1), multiplied with the volume. */
+  private fade = 1;
+  private sleepFade = 1;
+  private sleepTimer?: ReturnType<typeof setInterval>;
 
   constructor() {
     this.audio.preload = 'auto';
-    this.audio.volume = this.volume() / 100;
+    this.applyVolume();
     this.listenToAudio();
     this.setUpLockScreenControls();
     this.restore();
@@ -107,6 +137,31 @@ export class PlayerService {
         artwork: [{ src: this.archive.thumbnailUrl(song.itemId), sizes: '180x180' }],
       });
     });
+
+    // Android app: the "Now playing" notification (it also keeps music going with the screen off).
+    effect(() => {
+      const song = this.current();
+      const playing = this.isPlaying() || this.isTuning();
+      if (song && this.started()) this.native.nowPlaying(song.title, song.artist || song.album, playing);
+    });
+    this.native.onNotificationButton(action => {
+      if (action === 'toggle') this.togglePlay();
+      else if (action === 'next') this.next();
+      else this.previous();
+    });
+
+    // Equaliser / loudness levelling: switch Web Audio on the first time either is used.
+    effect(() => {
+      if (this.settings.needsAudioEffects()) untracked(() => this.enableEffects());
+    });
+    effect(() => {
+      const gains = this.settings.eqGains();
+      if (this.fx.active()) this.fx.setGains(gains);
+    });
+    effect(() => {
+      const on = this.settings.evenLoudness();
+      if (this.fx.active()) this.fx.setLevelling(on);
+    });
   }
 
   /** Opens a playlist and plays it from the top (or a random song with shuffle on). */
@@ -119,7 +174,7 @@ export class PlayerService {
     const songs = this.library.songsFor(station.key);
     if (songs.length) {
       this.playAt(station.key, this.shuffle() ? randomIndex(songs.length) : 0);
-    } else if (station.isLiked) {
+    } else if (station.isLiked || station.isDownloads) {
       // Nothing liked yet: just show the list, which explains how to add songs.
     } else {
       this.audio.pause();
@@ -129,10 +184,27 @@ export class PlayerService {
     }
   }
 
-  /** Plays song number `index` of a playlist. */
-  playAt(stationKey: string, index: number, fromHistory = false): void {
+  /**
+   * Plays song number `index` of a playlist. Offline, it moves on (in `step` direction)
+   * to the nearest downloaded song.
+   */
+  playAt(stationKey: string, index: number, fromHistory = false, step: 1 | -1 = 1): void {
     const songs = this.library.songsFor(stationKey);
+    const auto = this.autoAdvance;
+    this.autoAdvance = false;
     if (!songs.length) return;
+
+    let at = (index + songs.length) % songs.length;
+    if (!this.native.online() && !this.downloads.isDownloaded(songs[at])) {
+      at = this.nearestDownloaded(songs, at, step);
+      if (at < 0) {
+        this.pendingStart.set(null);
+        this.setTuning(false);
+        this.audio.pause();
+        this.toast.show("You're offline. Downloaded songs play without internet.", 3200);
+        return;
+      }
+    }
     if (stationKey !== this.queueKey()) this.history = [];
 
     const current = this.current();
@@ -143,19 +215,19 @@ export class PlayerService {
 
     this.pendingStart.set(null);
     this.queueKey.set(stationKey);
-    this.index = (index + songs.length) % songs.length;
+    this.index = at;
     const song = songs[this.index];
     this.current.set(song);
     this.started.set(true);
 
+    // "Fade between songs": the next song fades in only when the last one ended by itself.
+    this.fadingIn = auto && this.settings.fadeSeconds() > 0;
+    this.setFade(this.fadingIn ? 0 : 1);
+
     this.resumeAt = 0;
     this.audio.preload = 'auto';
-    this.audio.src = this.archive.songUrl(song);
+    this.load(song, true);
     this.save();
-    this.expectPlay();
-    this.audio.play().catch(err => {
-      if (err?.name === 'NotAllowedError') { this.setTuning(false); this.isPlaying.set(false); }
-    });
   }
 
   togglePlay(): void {
@@ -169,6 +241,7 @@ export class PlayerService {
       this.audio.pause();
     } else {
       this.expectPlay();
+      this.fx.resume();
       this.audio.play().catch(() => undefined);
     }
   }
@@ -192,7 +265,7 @@ export class PlayerService {
     const songs = this.library.songsFor(this.queueKey());
     const lastKey = this.history.pop();
     const lastIndex = lastKey ? songs.findIndex(s => songKey(s) === lastKey) : -1;
-    this.playAt(this.queueKey(), lastIndex >= 0 ? lastIndex : Math.max(this.currentIndex(songs), 0) - 1, true);
+    this.playAt(this.queueKey(), lastIndex >= 0 ? lastIndex : Math.max(this.currentIndex(songs), 0) - 1, true, -1);
   }
 
   /** `fraction` from 0 to 1 */
@@ -203,8 +276,26 @@ export class PlayerService {
   /** `percent` from 0 to 100 */
   setVolume(percent: number): void {
     this.volume.set(percent);
-    this.audio.volume = percent / 100;
+    this.applyVolume();
     this.storage.set(KEY_VOLUME, percent);
+  }
+
+  /** Sleep timer: minutes from now, 'song' = at the end of this song, null = off. */
+  setSleepTimer(choice: number | 'song' | null): void {
+    clearInterval(this.sleepTimer);
+    this.sleepFade = 1;
+    this.applyVolume();
+    this.sleepAfterSong.set(choice === 'song');
+    this.sleepAt.set(typeof choice === 'number' ? Date.now() + choice * 60000 : null);
+    this.clock.set(Date.now());
+    if (typeof choice === 'number') {
+      this.sleepTimer = setInterval(() => this.sleepTick(), 1000);
+      this.toast.show(`Music stops in ${choice} minutes`);
+    } else if (choice === 'song') {
+      this.toast.show('Music stops after this song');
+    } else {
+      this.toast.show('Sleep timer off');
+    }
   }
 
   toggleShuffle(): void {
@@ -269,7 +360,7 @@ export class PlayerService {
 
     this.resumeAt = saved.time;
     this.audio.preload = 'metadata';
-    this.audio.src = this.archive.songUrl(saved.song);
+    this.load(saved.song, false);
   }
 
   private listenToAudio(): void {
@@ -284,18 +375,139 @@ export class PlayerService {
       this.resumeAt = 0;
     });
     a.addEventListener('waiting', () => { if (!a.paused) this.expectPlay(); });
-    a.addEventListener('ended', () => this.next());
+    a.addEventListener('ended', () => {
+      if (this.sleepAfterSong()) {
+        this.sleepAfterSong.set(false);
+        this.wantPlay = false;
+        this.toast.show('Goodnight 🌙 Sleep timer stopped the music.');
+        return;
+      }
+      this.autoAdvance = true;
+      this.next();
+    });
     a.addEventListener('timeupdate', () => {
       if (this.resumeAt) return; // keep showing the saved position until the jump happens
       this.currentTime.set(a.currentTime || 0);
+      this.updateSongFade();
       if (!a.paused && Date.now() - this.lastSave > SAVE_EVERY_MS) this.save();
     });
     a.addEventListener('durationchange', () => this.duration.set(isFinite(a.duration) ? a.duration : 0));
     a.addEventListener('error', () => this.onSongError());
   }
 
+  /** Sets the audio source: the saved copy if there is one, otherwise archive.org. */
+  private load(song: Song, play: boolean): void {
+    const token = ++this.loadToken;
+    const start = (src: string) => {
+      this.audio.src = src;
+      if (!play) return;
+      this.expectPlay();
+      this.fx.resume();
+      this.audio.play().catch(err => {
+        if (err?.name === 'NotAllowedError') { this.setTuning(false); this.isPlaying.set(false); }
+      });
+    };
+    const now = this.downloads.srcNow(song);
+    if (now || !this.downloads.isDownloaded(song)) {
+      start(now ?? this.remoteUrl(song));
+      return;
+    }
+    if (play) this.expectPlay();
+    this.downloads.srcLater(song).then(src => { if (token === this.loadToken) start(src ?? this.remoteUrl(song)); });
+  }
+
+  /** With the equaliser on, songs must come through archive.org's /cors/ address. */
+  private remoteUrl(song: Song): string {
+    return this.fx.active() ? this.archive.corsUrl(song) : this.archive.songUrl(song);
+  }
+
+  private nearestDownloaded(songs: Song[], from: number, step: 1 | -1): number {
+    for (let n = 0; n < songs.length; n++) {
+      const i = (((from + n * step) % songs.length) + songs.length) % songs.length;
+      if (this.downloads.isDownloaded(songs[i])) return i;
+    }
+    return -1;
+  }
+
+  private enableEffects(): void {
+    if (this.fx.active()) return;
+    this.audio.crossOrigin = 'anonymous';
+    if (!this.fx.start(this.audio)) {
+      this.audio.removeAttribute('crossorigin');
+      this.toast.show("This phone's browser doesn't support the equaliser.");
+      return;
+    }
+    this.fx.setGains(this.settings.eqGains());
+    this.fx.setLevelling(this.settings.evenLoudness());
+    this.applyVolume();
+
+    // Reload the current song through the /cors/ address, at the same second.
+    const song = this.current();
+    if (!song || this.downloads.isDownloaded(song)) return;
+    const wasPlaying = !this.audio.paused;
+    this.resumeAt = this.audio.currentTime || this.resumeAt;
+    this.audio.preload = 'auto';
+    this.load(song, wasPlaying);
+  }
+
+  /** Fades the last seconds of a song out (and, after an automatic change, the first seconds in). */
+  private updateSongFade(): void {
+    const seconds = this.settings.fadeSeconds();
+    const a = this.audio;
+    if (!seconds || !isFinite(a.duration) || a.duration < seconds * 3) { this.setFade(1); return; }
+    let fade = Math.min(1, Math.max(0, (a.duration - a.currentTime) / seconds));
+    if (this.fadingIn) {
+      if (a.currentTime >= seconds) this.fadingIn = false;
+      else fade = Math.min(fade, a.currentTime / seconds);
+    }
+    this.setFade(fade);
+  }
+
+  private setFade(value: number): void {
+    if (value === this.fade) return;
+    this.fade = value;
+    this.applyVolume();
+  }
+
+  private applyVolume(): void {
+    const v = (this.volume() / 100) * this.fade * this.sleepFade;
+    if (this.fx.active()) {
+      this.audio.volume = 1;
+      this.fx.setVolume(v);
+    } else {
+      this.audio.volume = Math.min(1, Math.max(0, v));
+    }
+  }
+
+  private sleepTick(): void {
+    const at = this.sleepAt();
+    if (!at) return;
+    const now = Date.now();
+    this.clock.set(now);
+    const left = at - now;
+    if (left > SLEEP_FADE_MS) return;
+    if (left > 0) {
+      this.sleepFade = left / SLEEP_FADE_MS;
+      this.applyVolume();
+      return;
+    }
+    clearInterval(this.sleepTimer);
+    this.sleepAt.set(null);
+    this.wantPlay = false;
+    this.audio.pause();
+    this.sleepFade = 1;
+    this.applyVolume();
+    this.toast.show('Goodnight 🌙 Sleep timer stopped the music.');
+  }
+
   private onSongError(): void {
     if (!this.current() || !this.audio.getAttribute('src')) return;
+    if (!this.native.online() && !this.downloads.isDownloaded(this.current()!)) {
+      // Lost internet mid-song: carry on with downloaded songs, if any.
+      this.skips = 0;
+      setTimeout(() => this.next(), 300);
+      return;
+    }
     if (++this.skips >= MAX_SKIPS) {
       this.skips = 0;
       this.setTuning(false);

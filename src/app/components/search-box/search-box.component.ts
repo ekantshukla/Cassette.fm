@@ -7,6 +7,8 @@ import { Station } from '../../models/station.model';
 import { ArchiveService } from '../../services/archive.service';
 import { LibraryService, SongMatch } from '../../services/library.service';
 import { PlayerService } from '../../services/player.service';
+import { ToastService } from '../../services/toast.service';
+import { VoiceSearchService } from '../../services/voice-search.service';
 import { cleanName, firstValue, highlight, normalize } from '../../utils/text.utils';
 import { IconComponent } from '../icon/icon.component';
 
@@ -32,6 +34,8 @@ export class SearchBoxComponent {
   private readonly library = inject(LibraryService);
   private readonly player = inject(PlayerService);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+  protected readonly voice = inject(VoiceSearchService);
+  private readonly toast = inject(ToastService);
   private readonly input = viewChild<ElementRef<HTMLInputElement>>('input');
 
   protected readonly text = signal('');
@@ -75,6 +79,23 @@ export class SearchBoxComponent {
   protected expand(): void {
     this.expanded.set(true);
     setTimeout(() => this.input()?.nativeElement.focus());
+  }
+
+  /** Mic tapped: listen, and put what was said into the search. */
+  protected async speak(event: Event): Promise<void> {
+    event.preventDefault();
+    event.stopPropagation();
+    this.library.load(STATIONS[0]);
+    this.isOpen.set(true);
+    try {
+      await this.voice.listen(text => {
+        const el = this.input()?.nativeElement;
+        if (el) el.value = text;
+        this.onInput(text);
+      });
+    } catch (err) {
+      this.toast.show((err as Error).message, 3000);
+    }
   }
 
   protected onFocus(): void {
@@ -123,6 +144,7 @@ export class SearchBoxComponent {
   }
 
   protected close(clear: boolean): void {
+    if (this.voice.listening()) this.voice.stop();
     this.isOpen.set(false);
     this.expanded.set(false);
     if (clear) {

@@ -1,6 +1,10 @@
 import { ChangeDetectionStrategy, Component, ElementRef, effect, inject, input, output } from '@angular/core';
 
+import { APK_URL } from '../../data/app-info';
+import { DOWNLOADS_STATION, LIKED_STATION } from '../../data/stations';
 import { Station } from '../../models/station.model';
+import { DownloadsService } from '../../services/downloads.service';
+import { NativeService } from '../../services/native.service';
 import { LibraryService } from '../../services/library.service';
 import { PlayerService } from '../../services/player.service';
 import { IconComponent } from '../icon/icon.component';
@@ -16,6 +20,10 @@ import { IconComponent } from '../icon/icon.component';
 })
 export class PlaylistDrawerComponent {
   protected readonly library = inject(LibraryService);
+  protected readonly downloads = inject(DownloadsService);
+  protected readonly native = inject(NativeService);
+  protected readonly mine = [LIKED_STATION, DOWNLOADS_STATION];
+  protected readonly apkUrl = APK_URL;
   private readonly player = inject(PlayerService);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
 

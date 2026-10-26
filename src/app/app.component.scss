@@ -55,12 +55,41 @@
   h1 { min-width: 0; }
 }
 
+.mine {
+  flex: none;
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.offline {
+  position: sticky;
+  top: calc(var(--header-height) - 6px);
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: fit-content;
+  max-width: calc(100% - 24px);
+  margin: 8px auto 0;
+  padding: 7px 14px;
+  border-radius: 999px;
+  background: var(--surface-glass);
+  border: 1px solid var(--line);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  font-size: 13px;
+  color: var(--muted);
+
+  app-icon { width: 16px; height: 16px; flex: none; color: var(--gold); }
+}
+
 .liked-btn {
   flex: none;
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  margin-top: 8px;
   padding: 10px 16px 10px 14px;
   border-radius: 999px;
   border: 1px solid var(--line);
@@ -75,7 +104,11 @@
   app-icon { width: 18px; height: 18px; color: var(--heart); }
   &:hover { background: var(--glass-2); }
   &:active { transform: scale(0.96); }
-  &[aria-pressed='true'] { border-color: rgba(255, 77, 109, 0.6); background: rgba(255, 77, 109, 0.16); }
+  &[aria-pressed='true'] { border-color: rgba(var(--rose-rgb), 0.6); background: rgba(var(--rose-rgb), 0.16); }
+
+  &.dl-btn app-icon { color: var(--rose); }
+  &.dl-btn[aria-pressed='true'] { border-color: rgba(var(--rose-rgb), 0.6); background: rgba(var(--rose-rgb), 0.16); }
+  .count.busy { background: var(--gold); color: var(--ink-on-rose); }
 
   .count {
     min-width: 22px;
@@ -117,10 +150,10 @@ footer {
 
 /* Phones: just a round red heart, no text */
 @media (max-width: 600px) {
+  .mine { margin-top: 0; }
   .liked-btn {
     width: 44px;
     height: 44px;
-    margin-top: 0;
     padding: 0;
     justify-content: center;
 

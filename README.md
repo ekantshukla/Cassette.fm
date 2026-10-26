@@ -3,6 +3,12 @@
 80s, 90s and 2000s Bollywood classics, nonstop. Free, no login, **no ads**.
 An Angular app that streams audio straight from the [Internet Archive](https://archive.org).
 
+## 📱 Android app
+
+The same code also builds an Android app with offline downloads, background playback and
+Spotify-style settings (colours, backgrounds, equaliser, sleep timer…). GitHub builds the APK
+automatically — see **[ANDROID.md](ANDROID.md)**.
+
 ## Run it on your computer
 
 ```bash

@@ -2,6 +2,12 @@
 
 <app-header [menuOpen]="menuOpen()" (menuClick)="menuOpen.set(true)" />
 
+@if (!native.online()) {
+  <div class="offline" role="status">
+    <app-icon name="offline" /> You're offline · {{ downloads.count() ? 'your downloads still play' : 'download songs to listen without internet' }}
+  </div>
+}
+
 <main class="wrap layout">
   <app-player-card class="player-area" />
 
@@ -9,6 +15,17 @@
     <section class="hello">
       <div class="hello-top">
         <h1>Love songs that <i>never get old.</i></h1>
+        <div class="mine">
+        <button class="liked-btn dl-btn" type="button" aria-label="Downloads"
+                [attr.aria-pressed]="!!library.selected().isDownloads" (click)="openDownloads()">
+          <app-icon name="downloaded" />
+          <span class="label">Downloads</span>
+          @if (downloads.pending()) {
+            <span class="count busy">{{ downloads.pending() }}</span>
+          } @else if (downloads.count()) {
+            <span class="count">{{ downloads.count() }}</span>
+          }
+        </button>
         <button class="liked-btn" type="button" aria-label="Liked songs"
                 [attr.aria-pressed]="!!library.selected().isLiked" (click)="openLiked()">
           <app-icon name="heart-filled" />
@@ -17,6 +34,7 @@
             <span class="count">{{ library.liked().length }}</span>
           }
         </button>
+        </div>
       </div>
       <p>{{ library.language().tagline }}</p>
     </section>
@@ -36,5 +54,7 @@
 
 <app-playlist-drawer [open]="menuOpen()" (close)="menuOpen.set(false)" />
 <app-language-panel />
+<app-settings-panel />
+<app-account-screen />
 <app-tuning-popup />
 <app-toast />

@@ -88,6 +88,10 @@ export const LIKED_STATION: Station = {
   key: 'liked', group: 'Yours', name: '♥ Liked', subtitle: 'Songs you saved', mark: '♥', color: '#FF6F91', isLiked: true,
 };
 
+export const DOWNLOADS_STATION: Station = {
+  key: 'downloads', group: 'Yours', name: 'Downloads', subtitle: 'Play without internet', mark: '⤓', color: '#7BD389', isDownloads: true,
+};
+
 /** How many songs one playlist holds. */
 export const MAX_SONGS = 200;
 /** If the main search finds fewer songs than this, the backup search runs too. */

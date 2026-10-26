@@ -30,6 +30,8 @@ export interface Station {
 
   /** The "Liked" playlist, filled from the visitor's own hearts */
   isLiked?: boolean;
+  /** The "Downloads" playlist: songs saved on this phone for listening offline */
+  isDownloads?: boolean;
   /** Made on the fly from a search result; never saved */
   isTemporary?: boolean;
 }
