@@ -211,3 +211,20 @@
   .station { margin-top: 18px; }
   .title { font-size: 28px; }
 }
+
+/* Phones (app and mobile browser): a compact player, so the songs list shows sooner */
+@media (max-width: 600px) {
+  .card { padding: 16px 16px 12px; border-radius: 22px; }
+  .turntable { width: min(168px, 44vw); margin-top: 0; }
+  .vinyl { box-shadow: 0 16px 36px -16px rgba(0, 0, 0, 0.8), 0 0 0 4px rgba(255, 255, 255, 0.04), 0 0 50px -10px rgba(var(--rose-rgb), 0.35); }
+  .station { margin-top: 12px; font-size: 10px; }
+  .title { font-size: 24px; margin: 4px 0 2px; -webkit-line-clamp: 1; }
+  .artist { font-size: 13px; }
+  .save { margin-top: 10px; padding: 6px 14px 6px 10px; font-size: 13px; app-icon { width: 17px; height: 17px; } }
+  .progress { margin-top: 12px; }
+  .times { margin-top: 4px; }
+  .controls { margin-top: 4px; }
+  .controls .play-btn { width: 56px; height: 56px; app-icon { width: 22px; height: 22px; } }
+  .volume { margin-top: 8px; }
+  .credit { display: none; }
+}

@@ -105,8 +105,48 @@ header {
   app-icon { width: 24px; height: 24px; }
 }
 
+/* Signed in: photo (or initials) + first name, top right */
+.profile {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 170px;
+  padding: 3px 12px 3px 3px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.09);
+  transition: background 0.15s, border-color 0.15s;
+
+  &:hover { background: rgba(255, 255, 255, 0.14); border-color: rgba(var(--blush-rgb), 0.5); }
+  .pic { width: 34px; height: 34px; flex: none; border-radius: 50%; object-fit: cover; }
+  .initials {
+    display: grid; place-items: center;
+    background: linear-gradient(135deg, var(--rose), var(--rose-2));
+    color: var(--ink-on-rose); font-size: 12px; font-weight: 700;
+  }
+  .name { min-width: 0; font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+}
+
+.login {
+  padding: 8px 16px;
+  border-radius: 999px;
+  border: 0;
+  background: var(--rose);
+  color: var(--ink-on-rose);
+  font-weight: 600;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
 @media (max-width: 900px) {
   .live { display: none; }
+}
+
+@media (max-width: 600px) {
+  // Phones: Settings, Library and the language switch live in the bottom bar / Settings.
+  .gear, .menu-btn, app-language-picker { display: none; }
+  .profile { padding: 2px; border: 0; background: transparent; .name { display: none; } .pic { width: 32px; height: 32px; } }
+  .login { padding: 7px 12px; font-size: 12px; }
 }
 
 @media (max-width: 600px) {

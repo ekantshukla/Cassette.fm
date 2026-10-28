@@ -9,8 +9,12 @@ GitHub builds the APK for you — nothing to install on your computer.
 |---|---|
 | **Offline downloads** | ⤓ next to any song, or **Download** at the top of a playlist. Songs are saved inside the app and play with no internet. Covers are saved too. |
 | **Downloads playlist** | Button next to ♥ Liked (and in the ☰ menu). Offline, the player skips straight to downloaded songs. |
-| **Plays with the screen off** | A "Now playing" notification with ⏮ ⏯ ⏭ keeps music going in the background. |
+| **Plays with the screen off** | A media notification with the album cover, ⏮ ⏯ ⏭ and a seek bar: always visible (also collapsed), on the lock screen, in Android's Quick Settings media player, and from headphone / Bluetooth / car buttons. If notifications are off, Settings shows a **Turn on** button. |
+| **Phone layout** | Logo and profile on top; **Home · Search · Latest · Library · Settings** in a bottom bar; compact player. |
 | **Settings (⚙ in the header)** | Colour (6 accents), background (Dusk, Midnight/AMOLED, Ocean, Monsoon, Sunrise), floating lights on/off, 5-band equaliser with presets, even-out-loudness, fade between songs, sleep timer, Wi-Fi-only downloads, auto-download liked songs, storage used, remove all downloads. |
+| **Your Library** | ☰ → Your Library: own playlists, smart playlists from your plays, filters, sort, grid, pins, Recently deleted, export/import (saved to Documents/Cassette.fm). |
+| **Sound** | 10-band EQ + 14 presets, bass, treble, volume boost, stereo width/mono, balance, 8D audio, Space reverb, speed, your own presets. |
+| **Latest & Trending** | New songs per language (YouTube, screen on), Top 100 India (Apple previews), Spotify. See LATEST.md / SPOTIFY.md. |
 | **Accounts** | Sign up with email or Google; liked songs and settings follow the listener to any phone. Needs a free Firebase project: see **[ACCOUNTS.md](ACCOUNTS.md)**. |
 | **Voice search** | 🎤 in the search bar: say a song, film or singer ("play Tujhe Dekha To"). Uses Android's own speech recognition (English-India, which writes Hindi/Tamil/Kannada song names the way playlists spell them). Also works on the website in Chrome, Edge and Safari. |
 | **Back button** | Closes menus; on the home screen it sends the app to the background instead of stopping the music. |

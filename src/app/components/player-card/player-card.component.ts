@@ -6,6 +6,7 @@ import { SettingsService } from '../../services/settings.service';
 import { LibraryService } from '../../services/library.service';
 import { PlayerService } from '../../services/player.service';
 import { ToastService } from '../../services/toast.service';
+import { UiService } from '../../services/ui.service';
 import { formatTime } from '../../utils/text.utils';
 import { IconComponent } from '../icon/icon.component';
 
@@ -22,6 +23,7 @@ export class PlayerCardComponent {
   private readonly library = inject(LibraryService);
   private readonly archive = inject(ArchiveService);
   private readonly toast = inject(ToastService);
+  private readonly ui = inject(UiService);
   protected readonly settings = inject(SettingsService);
   private readonly downloads = inject(DownloadsService);
 
@@ -85,6 +87,11 @@ export class PlayerCardComponent {
   protected onSeekChange(value: string): void {
     this.dragPercent.set(null);
     this.player.seekTo(Number(value) / 1000);
+  }
+
+  protected addToPlaylist(): void {
+    const song = this.song();
+    if (song) this.ui.addToPlaylist.set([song]);
   }
 
   protected toggleLike(): void {

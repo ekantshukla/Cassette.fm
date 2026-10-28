@@ -1,13 +1,14 @@
 import { Injectable, computed, effect, inject, signal, untracked } from '@angular/core';
 
 import { Song, songKey } from '../models/song.model';
-import { Station } from '../models/station.model';
+import { Station, isLocalStation } from '../models/station.model';
 import { ArchiveService } from './archive.service';
 import { AudioFxService } from './audio-fx.service';
 import { DownloadsService } from './downloads.service';
 import { LibraryService } from './library.service';
 import { NativeService } from './native.service';
-import { SettingsService } from './settings.service';
+import { SPACES, SettingsService } from './settings.service';
+import { PLAY_COUNTS_AFTER_S } from './collections.service';
 import { StorageService } from './storage.service';
 import { ToastService } from './toast.service';
 
@@ -88,6 +89,8 @@ export class PlayerService {
   private tuningTimer?: ReturnType<typeof setTimeout>;
   /** Second to jump to once a restored song is ready. */
   private resumeAt = 0;
+  /** This song's play was already counted. */
+  private counted = false;
   private lastSave = 0;
   /** Changes with every song, so a slow-loading saved song can't replace a newer one. */
   private loadToken = 0;
@@ -139,15 +142,27 @@ export class PlayerService {
     });
 
     // Android app: the "Now playing" notification (it also keeps music going with the screen off).
+    // Sent again when the song, play/pause or length changes; Android moves the seek bar on by itself.
     effect(() => {
       const song = this.current();
       const playing = this.isPlaying() || this.isTuning();
-      if (song && this.started()) this.native.nowPlaying(song.title, song.artist || song.album, playing);
+      const duration = Math.round(this.duration());
+      if (song && this.started()) {
+        this.native.nowPlaying(song.title, song.artist || song.album, playing, {
+          position: untracked(() => this.audio.currentTime || 0), duration, artwork: this.archive.thumbnailUrl(song.itemId),
+        });
+      }
     });
-    this.native.onNotificationButton(action => {
+    this.native.onNotificationButton((action, position) => {
       if (action === 'toggle') this.togglePlay();
       else if (action === 'next') this.next();
-      else this.previous();
+      else if (action === 'previous') this.previous();
+      else if (action === 'seek' && position !== undefined && isFinite(this.audio.duration)) this.seekTo(position / this.audio.duration);
+    });
+    // Tell Android the new position after a seek, so the lock-screen seek bar jumps too.
+    this.audio.addEventListener('seeked', () => {
+      const song = this.current();
+      if (song) this.native.nowPlaying(song.title, song.artist || song.album, !this.audio.paused, { position: this.audio.currentTime, duration: this.duration() });
     });
 
     // Equaliser / loudness levelling: switch Web Audio on the first time either is used.
@@ -162,6 +177,26 @@ export class PlayerService {
       const on = this.settings.evenLoudness();
       if (this.fx.active()) this.fx.setLevelling(on);
     });
+    effect(() => {
+      const s = this.settings;
+      const [bass, treble, boost, width, balance, eightD, space] = [s.bass(), s.treble(), s.boost(), s.width(), s.balance(), s.eightD(), s.space()];
+      if (!this.fx.active()) return;
+      this.fx.setBass(bass);
+      this.fx.setTreble(treble);
+      this.fx.setBoost(boost);
+      this.fx.setWidth(width);
+      this.fx.setBalance(balance);
+      this.fx.set8D(eightD);
+      const room = SPACES.find(x => x.key === space) ?? SPACES[0];
+      this.fx.setSpace(room.seconds, room.wet);
+    });
+    // Playback speed (keeps the singer's pitch).
+    effect(() => {
+      const speed = this.settings.speed();
+      this.audio.preservesPitch = true;
+      this.audio.defaultPlaybackRate = speed;
+      this.audio.playbackRate = speed;
+    });
   }
 
   /** Opens a playlist and plays it from the top (or a random song with shuffle on). */
@@ -174,8 +209,8 @@ export class PlayerService {
     const songs = this.library.songsFor(station.key);
     if (songs.length) {
       this.playAt(station.key, this.shuffle() ? randomIndex(songs.length) : 0);
-    } else if (station.isLiked || station.isDownloads) {
-      // Nothing liked yet: just show the list, which explains how to add songs.
+    } else if (isLocalStation(station)) {
+      // Nothing in this list yet: just show it, it explains how to add songs.
     } else {
       this.audio.pause();
       this.wantPlay = true;
@@ -244,6 +279,13 @@ export class PlayerService {
       this.fx.resume();
       this.audio.play().catch(() => undefined);
     }
+  }
+
+  /** Pauses (used when another player starts: a preview, YouTube or Spotify). */
+  pause(): void {
+    this.wantPlay = false;
+    this.setTuning(false);
+    this.audio.pause();
   }
 
   next(): void {
@@ -389,6 +431,11 @@ export class PlayerService {
       if (this.resumeAt) return; // keep showing the saved position until the jump happens
       this.currentTime.set(a.currentTime || 0);
       this.updateSongFade();
+      // Count a play (for smart playlists) once a song has really been listened to.
+      if (!this.counted && a.currentTime >= PLAY_COUNTS_AFTER_S && this.current()) {
+        this.counted = true;
+        this.library.collections.recordPlay(this.current()!);
+      }
       if (!a.paused && Date.now() - this.lastSave > SAVE_EVERY_MS) this.save();
     });
     a.addEventListener('durationchange', () => this.duration.set(isFinite(a.duration) ? a.duration : 0));
@@ -398,8 +445,11 @@ export class PlayerService {
   /** Sets the audio source: the saved copy if there is one, otherwise archive.org. */
   private load(song: Song, play: boolean): void {
     const token = ++this.loadToken;
+    this.counted = !play; // a song restored after a refresh was already counted
+    const speed = this.settings.speed();
     const start = (src: string) => {
       this.audio.src = src;
+      this.audio.playbackRate = speed;
       if (!play) return;
       this.expectPlay();
       this.fx.resume();

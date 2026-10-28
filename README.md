@@ -3,6 +3,21 @@
 80s, 90s and 2000s Bollywood classics, nonstop. Free, no login, **no ads**.
 An Angular app that streams audio straight from the [Internet Archive](https://archive.org).
 
+## What's new
+
+- **Your Library** (☰ or the Library button): your own playlists, smart playlists that fill themselves from
+  your plays (On Repeat, Your Top Songs with play counts, Recently Played, Forgotten Favourites), filters, sort,
+  grid/list, unlimited pins, Recently deleted (30 days), export/import playlists as a file. *Browse* has every
+  ready-made playlist.
+- **⋯ on every song:** Add to playlist, like, move up/down, remove; **Add all** copies a whole playlist.
+- **Sound** (Settings, or the sliders button on the player): 10-band EQ with 14 presets and a live curve, bass
+  boost, treble, volume boost with limiter, stereo width / mono, balance, **8D audio**, Space (room / hall /
+  stadium), speed 0.75–1.5×, save your own presets.
+- **Latest & Trending:** new songs per language and India's charts. See **[LATEST.md](LATEST.md)**.
+- **Spotify** (optional, max 5 users): see **[SPOTIFY.md](SPOTIFY.md)**.
+- **Accounts everywhere:** with Firebase (ACCOUNTS.md) they're real; without it, sign up / log in / phone OTP
+  work as **demo accounts saved on the device** (demo OTP `123456`). Accounts now also keep your playlists.
+
 ## 📱 Android app
 
 The same code also builds an Android app with offline downloads, background playback and

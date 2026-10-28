@@ -1,0 +1,41 @@
+:host { display: contents; }
+
+.scrim { position: fixed; inset: 0; z-index: 60; background: rgba(5, 2, 12, 0.6); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); }
+
+.sheet {
+  position: fixed; z-index: 61; left: 50%; bottom: 0; transform: translateX(-50%);
+  width: min(480px, 100vw); max-height: 78vh;
+  display: flex; flex-direction: column; gap: 2px;
+  padding: 8px 14px calc(16px + env(safe-area-inset-bottom, 0px));
+  border-radius: 24px 24px 0 0; background: var(--surface); border: 1px solid var(--line); border-bottom: 0;
+  box-shadow: 0 -20px 60px -20px rgba(0, 0, 0, 0.8);
+  animation: up 0.25s cubic-bezier(0.3, 0.7, 0.3, 1);
+}
+@keyframes up { from { transform: translate(-50%, 40px); opacity: 0; } }
+
+.grab { width: 40px; height: 4px; margin: 2px auto 6px; border-radius: 4px; background: rgba(255, 255, 255, 0.2); }
+.head {
+  display: flex; align-items: center; justify-content: space-between; padding: 0 4px 8px;
+  h2 { margin: 0; font-family: var(--serif); font-weight: 400; font-size: 26px; }
+  small { display: block; max-width: 300px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--muted); font-size: 13px; }
+}
+
+.list { overflow-y: auto; }
+.row {
+  display: flex; align-items: center; gap: 14px; width: 100%;
+  padding: 8px; border: 0; border-radius: 14px; background: none; text-align: left;
+  &:hover { background: var(--glass-2); }
+}
+.tile {
+  width: 46px; height: 46px; flex: none; display: grid; place-items: center; border-radius: 12px;
+  background: var(--c, var(--glass-2)); color: #fff; font-size: 18px;
+  &.plus { background: var(--glass-2); app-icon { width: 22px; height: 22px; } }
+}
+.text { flex: 1; min-width: 0; b, span { display: block; } span { font-size: 13px; color: var(--muted); } }
+.tick { width: 20px; height: 20px; color: var(--rose); }
+.new { display: flex; gap: 8px; padding: 6px 4px 10px; }
+.new input, .find {
+  flex: 1; min-width: 0; padding: 10px 14px; border-radius: 12px; border: 1px solid var(--line); background: rgba(0, 0, 0, 0.25);
+}
+.find { margin: 6px 4px; }
+.pill { padding: 8px 16px; border-radius: 999px; border: 0; background: var(--rose); color: var(--ink-on-rose); font-weight: 600; }

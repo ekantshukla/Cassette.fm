@@ -4,10 +4,14 @@ import { App } from '@capacitor/app';
 import { Network } from '@capacitor/network';
 
 /** Our own Android plugin (android/app/src/main/java/fm/cassette/app/PlaybackPlugin.java). */
+export interface NowPlayingExtra { position?: number; duration?: number; artwork?: string; }
+export type NotificationAction = 'toggle' | 'next' | 'previous' | 'seek';
 interface PlaybackPlugin {
-  update(options: { title: string; artist: string; playing: boolean }): Promise<void>;
+  update(options: { title: string; artist: string; playing: boolean } & NowPlayingExtra): Promise<void>;
   stop(): Promise<void>;
-  addListener(event: 'action', handler: (data: { action: 'toggle' | 'next' | 'previous' }) => void): Promise<PluginListenerHandle>;
+  notificationsEnabled(): Promise<{ enabled: boolean }>;
+  openNotificationSettings(): Promise<void>;
+  addListener(event: 'action', handler: (data: { action: NotificationAction; position?: number }) => void): Promise<PluginListenerHandle>;
 }
 const Playback = registerPlugin<PlaybackPlugin>('Playback');
 
@@ -41,8 +45,18 @@ export class NativeService {
   }
 
   /** Shows / updates the notification. Safe to call often. */
-  nowPlaying(title: string, artist: string, playing: boolean): void {
-    if (this.isApp) Playback.update({ title, artist, playing }).catch(() => undefined);
+  nowPlaying(title: string, artist: string, playing: boolean, extra: NowPlayingExtra = {}): void {
+    if (this.isApp) Playback.update({ title, artist, playing, ...extra }).catch(() => undefined);
+  }
+
+  /** Android: are notifications allowed? (Without them there are no controls on the lock screen.) */
+  async notificationsAllowed(): Promise<boolean> {
+    if (!this.isApp) return true;
+    return Playback.notificationsEnabled().then(r => r.enabled).catch(() => true);
+  }
+
+  openNotificationSettings(): void {
+    if (this.isApp) Playback.openNotificationSettings().catch(() => undefined);
   }
 
   stopNowPlaying(): void {
@@ -50,8 +64,8 @@ export class NativeService {
   }
 
   /** Buttons pressed on the notification. */
-  onNotificationButton(handler: (action: 'toggle' | 'next' | 'previous') => void): void {
-    if (this.isApp) Playback.addListener('action', d => handler(d.action)).catch(() => undefined);
+  onNotificationButton(handler: (action: NotificationAction, position?: number) => void): void {
+    if (this.isApp) Playback.addListener('action', d => handler(d.action, d.position)).catch(() => undefined);
   }
 
   /**

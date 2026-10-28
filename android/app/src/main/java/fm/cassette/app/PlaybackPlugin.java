@@ -3,6 +3,9 @@ package fm.cassette.app;
 import android.Manifest;
 import android.content.Intent;
 import android.os.Build;
+import android.provider.Settings;
+
+import androidx.core.app.NotificationManagerCompat;
 
 import androidx.core.content.ContextCompat;
 
@@ -35,12 +38,35 @@ public class PlaybackPlugin extends Plugin {
         instance = this;
     }
 
-    /** Sent by PlaybackService when a notification button is pressed. */
-    static void sendAction(String action) {
-        if (instance == null) return;
+    /** Sent by PlaybackService when a notification / lock-screen / headphone button is pressed. */
+    static void sendAction(String action, double position) {
+        if (instance == null || action == null) return;
         JSObject data = new JSObject();
         data.put("action", action);
+        if (position >= 0) data.put("position", position);
         instance.notifyListeners("action", data, true);
+    }
+
+    /** Whether Android lets the app show notifications (needed for the controls with the screen off). */
+    @PluginMethod
+    public void notificationsEnabled(PluginCall call) {
+        JSObject res = new JSObject();
+        res.put("enabled", NotificationManagerCompat.from(getContext()).areNotificationsEnabled());
+        call.resolve(res);
+    }
+
+    /** Opens this app's notification settings, so the listener can switch them on. */
+    @PluginMethod
+    public void openNotificationSettings(PluginCall call) {
+        Intent intent;
+        if (Build.VERSION.SDK_INT >= 26) {
+            intent = new Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, getContext().getPackageName());
+        } else {
+            intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, android.net.Uri.parse("package:" + getContext().getPackageName()));
+        }
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        getContext().startActivity(intent);
+        call.resolve();
     }
 
     @PluginMethod
@@ -59,21 +85,22 @@ public class PlaybackPlugin extends Plugin {
     }
 
     private void startService(PluginCall call) {
-        String title = call.getString("title", "Cassette.fm");
-        String artist = call.getString("artist", "");
-        boolean playing = Boolean.TRUE.equals(call.getBoolean("playing", true));
+        Intent intent = new Intent(getContext(), PlaybackService.class);
+        intent.putExtra("title", call.getString("title", "Cassette.fm"));
+        intent.putExtra("artist", call.getString("artist", ""));
+        intent.putExtra("playing", Boolean.TRUE.equals(call.getBoolean("playing", true)));
+        intent.putExtra("position", (double) call.getDouble("position", 0.0));
+        intent.putExtra("duration", (double) call.getDouble("duration", 0.0));
+        String artwork = call.getString("artwork");
+        if (artwork != null) intent.putExtra("artwork", artwork);
         try {
             // Already running: just refresh the notification (no new start, which Android may refuse in the background).
             PlaybackService running = PlaybackService.instance;
             if (running != null) {
-                running.show(title, artist, playing);
+                running.show(intent);
                 call.resolve();
                 return;
             }
-            Intent intent = new Intent(getContext(), PlaybackService.class);
-            intent.putExtra("title", title);
-            intent.putExtra("artist", artist);
-            intent.putExtra("playing", playing);
             ContextCompat.startForegroundService(getContext(), intent);
             call.resolve();
         } catch (Exception e) {

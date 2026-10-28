@@ -7,7 +7,8 @@
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
-    "playlists": "esbuild scripts/build-playlists.ts --bundle --platform=node --format=esm --tsconfig=tsconfig.app.json --outfile=.scripts/build-playlists.mjs --log-level=warning && node .scripts/build-playlists.mjs"
+    "playlists": "esbuild scripts/build-playlists.ts --bundle --platform=node --format=esm --tsconfig=tsconfig.app.json --outfile=.scripts/build-playlists.mjs --log-level=warning && node .scripts/build-playlists.mjs",
+    "latest": "esbuild scripts/build-latest.ts --bundle --platform=node --format=esm --tsconfig=tsconfig.app.json --outfile=.scripts/build-latest.mjs --log-level=warning && node .scripts/build-latest.mjs"
   },
   "private": true,
   "packageManager": "npm@10.9.9",

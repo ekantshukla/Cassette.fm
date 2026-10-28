@@ -4,6 +4,12 @@
       <h2>{{ heading() }}</h2>
       <span class="count">{{ countText() }}</span>
     </div>
+    <div class="head-actions">
+    @if (songs().length) {
+      <button class="save-all add-all" type="button" aria-label="Add all to a playlist" (click)="addAll()">
+        <app-icon name="plus" /><span>Add all</span>
+      </button>
+    }
     @if (downloadAction(); as action) {
       <button class="save-all" type="button" [class.armed]="confirming()" [class.busy]="action.kind === 'busy'"
               [disabled]="action.kind === 'done'" (click)="onDownloadAll()">
@@ -15,6 +21,7 @@
         <span>{{ action.label }}</span>
       </button>
     }
+    </div>
   </div>
 
   <ol class="list" [class.playing]="player.isPlaying() && !player.isTuning()">
@@ -27,13 +34,31 @@
           <span class="thumb" [style.background-image]="thumb(song)"></span>
           <span class="info">
             <b>{{ song.title }}</b>
-            <span>{{ song.artist || song.album }}</span>
+            <span>@if (station().isSmart) {<em class="plays">{{ plays(song) }} {{ plays(song) === 1 ? 'play' : 'plays' }}</em> · }{{ song.artist || song.album }}</span>
           </span>
           <app-download-button [song]="song" />
           <button class="icon-btn small heart" type="button" aria-label="Like"
                   [class.on]="liked" [attr.aria-pressed]="liked" (click)="toggleLike($event, song)">
             <app-icon name="heart-filled" />
           </button>
+          <button class="icon-btn small more" type="button" aria-label="More options for this song"
+                  [attr.aria-expanded]="menuFor() === songKey(song)" (click)="toggleMenu($event, song)">
+            <app-icon name="more" />
+          </button>
+          @if (menuFor() === songKey(song)) {
+            <div class="row-menu" role="menu" [class.up]="i > 2 && i > songs().length - 4" (click)="$event.stopPropagation()" (keydown.enter)="$event.stopPropagation()">
+              <button type="button" role="menuitem" (click)="addOne(song)"><app-icon name="plus" /> Add to playlist</button>
+              <button type="button" role="menuitem" (click)="toggleLike($event, song); menuFor.set(null)">
+                <app-icon [name]="liked ? 'heart-filled' : 'heart'" /> {{ liked ? 'Remove from Liked' : 'Save to Liked' }}
+              </button>
+              @if (station().isUser) {
+                @if (i > 0) { <button type="button" role="menuitem" (click)="move(song, -1)"><app-icon name="up" /> Move up</button> }
+                @if (i < songs().length - 1) { <button type="button" role="menuitem" (click)="move(song, 1)"><app-icon name="down" /> Move down</button> }
+                <button type="button" role="menuitem" class="danger" (click)="removeFromPlaylist(song)"><app-icon name="trash" /> Remove from this playlist</button>
+              }
+              <span class="stat">Played {{ plays(song) }} {{ plays(song) === 1 ? 'time' : 'times' }} by you</span>
+            </div>
+          }
         </li>
       }
       @if (station().endless && library.canLoadMore(station())) {
@@ -47,6 +72,16 @@
           </button>
         </li>
       }
+    } @else if (station().isUser) {
+      <li class="empty">
+        <b>Your playlist is empty</b>
+        Tap <app-icon name="more" class="inline" /> on any song, then <em>Add to playlist</em>.
+      </li>
+    } @else if (station().isSmart) {
+      <li class="empty">
+        <b>Fills up as you listen</b>
+        {{ station().subtitle }}. A song counts as played after 30 seconds.
+      </li>
     } @else if (station().isLiked) {
       <li class="empty">Tap ♥ on any song to keep it here.</li>
     } @else if (station().isDownloads) {

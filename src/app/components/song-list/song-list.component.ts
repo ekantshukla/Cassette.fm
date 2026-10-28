@@ -6,6 +6,8 @@ import { AVERAGE_SONG_BYTES, DownloadsService } from '../../services/downloads.s
 import { LibraryService } from '../../services/library.service';
 import { PlayerService } from '../../services/player.service';
 import { ToastService } from '../../services/toast.service';
+import { UiService } from '../../services/ui.service';
+import { USER_PREFIX } from '../../services/collections.service';
 import { formatBytes } from '../../utils/text.utils';
 import { DownloadButtonComponent } from '../download-button/download-button.component';
 import { IconComponent } from '../icon/icon.component';
@@ -20,6 +22,7 @@ const CONFIRM_ABOVE = 25;
   templateUrl: './song-list.component.html',
   styleUrl: './song-list.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: { '(document:click)': 'menuFor.set(null)', '(document:keydown.escape)': 'menuFor.set(null)' },
 })
 export class SongListComponent {
   protected readonly library = inject(LibraryService);
@@ -28,6 +31,9 @@ export class SongListComponent {
   private readonly toast = inject(ToastService);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   protected readonly downloads = inject(DownloadsService);
+  private readonly ui = inject(UiService);
+  /** Song whose ⋯ menu is open. */
+  protected readonly menuFor = signal<string | null>(null);
 
   protected readonly songKey = songKey;
   protected readonly placeholders = Array.from({ length: 7 });
@@ -37,6 +43,34 @@ export class SongListComponent {
   protected readonly loading = computed(() => this.library.isLoading(this.station().key));
   protected readonly finished = computed(() => this.library.isFinished(this.station().key));
   protected readonly heading = computed(() => (this.station().isLiked ? 'Liked songs' : this.station().name));
+
+  protected toggleMenu(event: Event, song: Song): void {
+    event.stopPropagation();
+    this.menuFor.set(this.menuFor() === songKey(song) ? null : songKey(song));
+  }
+
+  protected addOne(song: Song): void {
+    this.menuFor.set(null);
+    this.ui.addToPlaylist.set([song]);
+  }
+
+  protected addAll(): void {
+    this.ui.addToPlaylist.set([...this.songs()]);
+  }
+
+  protected move(song: Song, step: -1 | 1): void {
+    this.library.collections.moveSong(this.station().key.slice(USER_PREFIX.length), song, step);
+  }
+
+  protected removeFromPlaylist(song: Song): void {
+    this.menuFor.set(null);
+    this.library.collections.removeSong(this.station().key.slice(USER_PREFIX.length), song);
+    this.toast.show(`Removed from ${this.station().name}`);
+  }
+
+  protected plays(song: Song): number {
+    return this.library.collections.playCount(song);
+  }
 
   /** "Download all" in the playlist header: what it says and does right now. */
   protected readonly confirming = signal(false);

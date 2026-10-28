@@ -19,6 +19,7 @@ import { dirname } from 'node:path';
 import { ALL_STATIONS as STATIONS } from '../src/app/data/languages';
 import { Song } from '../src/app/models/song.model';
 import { ArchiveService } from '../src/app/services/archive.service';
+import { CollectionsService } from '../src/app/services/collections.service';
 import { LibraryService, PLAYLISTS_VERSION, PrebuiltPlaylists } from '../src/app/services/library.service';
 import { SongFinderService } from '../src/app/services/song-finder.service';
 import { StorageService } from '../src/app/services/storage.service';
@@ -28,7 +29,7 @@ const OUTPUT = 'public/playlists.json';
 const MIN_SHARE_OF_PREVIOUS = 0.5;
 
 async function main(): Promise<void> {
-  const injector = Injector.create({ providers: [ArchiveService, SongFinderService, StorageService, LibraryService] });
+  const injector = Injector.create({ providers: [ArchiveService, SongFinderService, StorageService, CollectionsService, LibraryService] });
   const library = runInInjectionContext(injector, () => injector.get(LibraryService));
   const previous = await fetchPrevious();
 

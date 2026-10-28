@@ -8,12 +8,20 @@
       <app-language-picker />
       <button class="gear" type="button" aria-label="Settings" aria-controls="settings-panel"
               [attr.aria-expanded]="settings.open()" (click)="settings.openAt()">
-        @if (account.user()) {
-          <span class="me">{{ account.initials() }}</span>
-        } @else {
-          <app-icon name="settings" />
-        }
+        <app-icon name="settings" />
       </button>
+      @if (account.user(); as user) {
+        <button class="profile" type="button" [attr.aria-label]="'Your profile: ' + account.displayName()" (click)="settings.openAt('account')">
+          @if (account.avatar(); as photo) {
+            <img class="pic" [src]="photo" alt="" referrerpolicy="no-referrer">
+          } @else {
+            <span class="pic initials">{{ account.initials() }}</span>
+          }
+          <span class="name">{{ firstName() }}</span>
+        </button>
+      } @else if (account.ready()) {
+        <button class="login" type="button" (click)="account.screenOpen.set(true)">Log in</button>
+      }
       <div class="live" [class.on]="player.isPlaying()">
         <b></b><span>{{ liveText() }}</span>
       </div>

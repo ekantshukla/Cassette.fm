@@ -58,6 +58,9 @@
 .mine {
   flex: none;
   display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  max-width: 48%;
   gap: 8px;
   margin-top: 8px;
 }
@@ -107,6 +110,9 @@
   &[aria-pressed='true'] { border-color: rgba(var(--rose-rgb), 0.6); background: rgba(var(--rose-rgb), 0.16); }
 
   &.dl-btn app-icon { color: var(--rose); }
+  &.lib-btn app-icon { color: var(--blush); }
+  &.new-btn { border-color: rgba(var(--rose-rgb), 0.55); background: linear-gradient(120deg, rgba(var(--rose-rgb), 0.28), rgba(var(--glow-rgb), 0.22)); }
+  &.new-btn app-icon { color: var(--gold); }
   &.dl-btn[aria-pressed='true'] { border-color: rgba(var(--rose-rgb), 0.6); background: rgba(var(--rose-rgb), 0.16); }
   .count.busy { background: var(--gold); color: var(--ink-on-rose); }
 
@@ -150,6 +156,8 @@ footer {
 
 /* Phones: just a round red heart, no text */
 @media (max-width: 600px) {
+  // Latest and Library are in the bottom bar on phones.
+  .liked-btn.new-btn, .liked-btn.lib-btn { display: none; }
   .mine { margin-top: 0; }
   .liked-btn {
     width: 44px;

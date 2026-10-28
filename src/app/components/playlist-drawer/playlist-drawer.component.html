@@ -1,37 +1,136 @@
 <div class="scrim" [class.open]="open()" (click)="close.emit()"></div>
 
-<nav class="drawer" id="drawer" aria-label="Playlists" [class.open]="open()" [attr.aria-hidden]="!open()" [attr.inert]="open() ? null : ''">
+<nav class="drawer" id="drawer" aria-label="Your Library" [class.open]="open()" [attr.aria-hidden]="!open()" [attr.inert]="open() ? null : ''"
+     (click)="menuFor.set(null)">
   <div class="head">
-    <h2>Playlists</h2>
+    <div class="tabs" role="tablist">
+      <button class="tab" type="button" role="tab" [attr.aria-selected]="ui.menuTab() === 'library'" (click)="ui.menuTab.set('library')">Your Library</button>
+      <button class="tab" type="button" role="tab" [attr.aria-selected]="ui.menuTab() === 'browse'" (click)="ui.menuTab.set('browse')">Browse</button>
+    </div>
     <button class="icon-btn" type="button" aria-label="Close menu" (click)="close.emit()">
       <app-icon name="close" />
     </button>
   </div>
 
-  <div class="group">Your library</div>
-  @for (station of mine; track station.key) {
-    <button class="item" type="button" [attr.data-key]="station.key"
-            [attr.aria-current]="library.selected().key === station.key" (click)="pick(station)">
-      <span class="tile" [style.--c]="station.color">{{ station.mark }}</span>
-      <span class="text">
-        <b>{{ station.isLiked ? 'Liked songs' : station.name }}</b>
-        <span>{{ station.isLiked ? library.liked().length + ' songs' : downloads.count() + ' songs · plays offline' }}</span>
-      </span>
-    </button>
-  }
-
-  @for (group of library.groups(); track group.name) {
-    <div class="group">{{ group.name }}</div>
-    @for (station of group.stations; track station.key) {
-      <button class="item" type="button" [attr.data-key]="station.key"
-              [attr.aria-current]="library.selected().key === station.key"
-              (click)="pick(station)">
-        <span class="tile" [style.--c]="station.color">{{ station.mark }}</span>
-        <span class="text">
-          <b>{{ station.name }} @if (station.badge) {<em class="badge">{{ station.badge }}</em>}</b>
-          <span>{{ station.subtitle }}</span>
-        </span>
+  @if (ui.menuTab() === 'library') {
+    <!-- ================= Your Library ================= -->
+    <div class="toolbar">
+      <button class="create-btn" type="button" (click)="startCreate()"><app-icon name="plus" /> Create</button>
+      <button class="icon-btn small" type="button" aria-label="Search your library" [class.on]="searching()" (click)="toggleSearch()"><app-icon name="search" /></button>
+      <button class="sort-btn" type="button" (click)="nextSort()"><app-icon name="sort" /> {{ sortName() }}</button>
+      <button class="icon-btn small" type="button" [attr.aria-label]="grid() ? 'Show as list' : 'Show as grid'" (click)="toggleGrid()">
+        <app-icon [name]="grid() ? 'list' : 'grid'" />
       </button>
+    </div>
+
+    @if (searching()) {
+      <input class="lib-search" type="search" placeholder="Search in Your Library" [value]="query()" (input)="query.set(value($event))">
+    }
+
+    @if (creating()) {
+      <form class="create" (submit)="$event.preventDefault(); create(newName.value)">
+        <input #newName type="text" maxlength="40" placeholder="Give your playlist a name" aria-label="Playlist name">
+        <button class="pill" type="submit">Create</button>
+        <button class="icon-btn small" type="button" aria-label="Cancel" (click)="creating.set(false)"><app-icon name="close" /></button>
+      </form>
+    }
+
+    <div class="filters" role="radiogroup" aria-label="Filter">
+      @for (f of filters; track f.key) {
+        <button class="filter" type="button" role="radio" [attr.aria-checked]="filter() === f.key" (click)="filter.set(f.key)">{{ f.name }}</button>
+      }
+    </div>
+
+    <div class="items" [class.grid]="grid()">
+      @for (item of items(); track item.station.key) {
+        @let s = item.station;
+        <div class="item-wrap">
+          <button class="item" type="button" [attr.data-key]="s.key" [attr.aria-current]="library.selected().key === s.key" (click)="pick(s)">
+            <span class="tile" [class.smart]="s.isSmart" [style.--c]="s.color">{{ s.mark }}</span>
+            <span class="text">
+              @if (renaming() === s.key) {
+                <input class="rename" type="text" maxlength="40" [value]="s.name" (click)="$event.stopPropagation()"
+                       (keydown.enter)="rename(s, value($event))" (blur)="rename(s, value($event))">
+              } @else {
+                <b>@if (item.pinned) {<app-icon name="pin" class="pinned" />}{{ s.isLiked ? 'Liked songs' : s.name }}</b>
+              }
+              <span>{{ item.subtitle }}</span>
+            </span>
+          </button>
+          <button class="icon-btn small more" type="button" aria-label="More options" (click)="toggleMenu($event, s.key)"><app-icon name="more" /></button>
+
+          @if (menuFor() === s.key) {
+            <div class="actions" role="menu" (click)="$event.stopPropagation()">
+              <button type="button" role="menuitem" (click)="pick(s)"><app-icon name="play" /> Play</button>
+              <button type="button" role="menuitem" (click)="togglePin(s)"><app-icon name="pin" /> {{ item.pinned ? 'Unpin' : 'Pin to top' }}</button>
+              @if (isUser(s)) {
+                <button type="button" role="menuitem" (click)="renaming.set(s.key); menuFor.set(null)">✎ Rename</button>
+                <button type="button" role="menuitem" (click)="restyle(s)">🎨 Change cover</button>
+                <button type="button" role="menuitem" (click)="exportOne(s)"><app-icon name="download" /> Export / share file</button>
+                <button type="button" role="menuitem" class="danger" (click)="remove(s)"><app-icon name="trash" /> Delete</button>
+              }
+            </div>
+          }
+        </div>
+      } @empty {
+        <p class="empty">{{ query() ? 'Nothing matches “' + query() + '”' : 'Nothing here yet.' }}</p>
+      }
+    </div>
+
+    @if (!collections.playlists().length && filter() === 'all' && !query()) {
+      <button class="hint-card" type="button" (click)="startCreate()">
+        <b>Make your first playlist</b>
+        <span>Then tap ⋯ on any song → Add to playlist. Smart playlists fill up by themselves as you listen.</span>
+      </button>
+    }
+
+    <div class="lib-footer">
+      <label class="link-btn">
+        <input type="file" accept=".json,application/json" hidden (change)="importFile($event)">
+        ⤒ Import playlists
+      </label>
+      <button class="link-btn" type="button" (click)="exportAll()">⤓ Export all</button>
+      @if (collections.deleted().length) {
+        <button class="link-btn" type="button" (click)="showDeleted.set(!showDeleted())">↺ Recently deleted ({{ collections.deleted().length }})</button>
+      }
+    </div>
+
+    @if (showDeleted()) {
+      <div class="deleted">
+        @for (p of collections.deleted(); track p.id) {
+          <div class="deleted-row">
+            <span class="tile small" [style.--c]="p.color">{{ p.emoji }}</span>
+            <span class="text"><b>{{ p.name }}</b><span>{{ p.songs.length }} songs · {{ daysLeft(p.deletedAt!) }} days left</span></span>
+            <button class="pill" type="button" (click)="collections.restore(p.id)">Restore</button>
+            <button class="icon-btn small" type="button" aria-label="Delete forever" (click)="collections.deleteForever(p.id)"><app-icon name="trash" /></button>
+          </div>
+        }
+      </div>
+    }
+  } @else {
+    <!-- ================= Browse ================= -->
+    <button class="latest-card" type="button" (click)="close.emit(); ui.latestOpen.set(true)">
+      <app-icon name="spark" />
+      <span><b>Latest & Trending</b><small>New songs and today's charts</small></span>
+    </button>
+
+    @for (group of library.groups(); track group.name) {
+      <div class="group">{{ group.name }}</div>
+      @for (station of group.stations; track station.key) {
+        <div class="item-wrap">
+          <button class="item" type="button" [attr.data-key]="station.key"
+                  [attr.aria-current]="library.selected().key === station.key" (click)="pick(station)">
+            <span class="tile" [style.--c]="station.color">{{ station.mark }}</span>
+            <span class="text">
+              <b>{{ station.name }} @if (station.badge) {<em class="badge">{{ station.badge }}</em>}</b>
+              <span>{{ station.subtitle }}</span>
+            </span>
+          </button>
+          <button class="icon-btn small more" type="button" [class.on]="collections.isPinned(station.key)"
+                  [attr.aria-label]="collections.isPinned(station.key) ? 'Unpin from Your Library' : 'Pin to Your Library'"
+                  (click)="$event.stopPropagation(); togglePin(station)"><app-icon name="pin" /></button>
+        </div>
+      }
     }
   }
 
@@ -40,8 +139,6 @@
   }
 
   <p class="tip">
-    Tip: tap ♥ on a song to save it to Liked songs.<br>
-    Songs come from the Internet Archive, ad-free.<br><br>
     Cassette.fm · crafted with ♥ by <b class="author">Ekant Shukla</b>
   </p>
 </nav>

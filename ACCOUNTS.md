@@ -1,8 +1,15 @@
 # Accounts (sign up / log in) — Android app
 
-Listeners can **sign up with email + password** or **Continue with Google**, like Spotify.
-Their **liked songs and settings are backed up** to their account and come back on any phone.
-Downloads stay on each phone. The website stays as it is, with no login.
+Listeners can **sign up with email + password** or **Continue with Google**, like Spotify, in the
+**Android app and on the website**. Their **liked songs, playlists, profile photo and settings are backed up**
+to their account and come back on any phone or browser. Downloads stay on each device.
+
+Until Firebase is set up, sign-up and log-in still work as **demo accounts** saved on the device only
+(phone sign-in code `123456`). Once the steps below are done, the same screens become real accounts.
+
+**Profile photo:** tap the circle in Settings (or *Upload photo*). It's cropped to a square, shrunk to about
+15 KB and kept in the account's Firestore backup, so no paid Firebase Storage is needed. Google accounts
+show their Google photo until the listener uploads their own. The photo and first name sit at the top right.
 
 Accounts run on **Firebase** (Google). It's **free** for email and Google sign-in
 (up to 50,000 monthly users) and for the small backups this app makes.
@@ -39,6 +46,19 @@ Accounts run on **Firebase** (Google). It's **free** for email and Google sign-i
 
 > Order matters: turn on Google sign-in (step 2) **before** downloading `google-services.json` (step 4).
 > If you turned it on later, download the file again and update the secret.
+
+## Real accounts on the website too (5 more minutes)
+
+Do the steps above first (same Firebase project), then:
+
+1. Firebase → **Project settings ⚙ → Your apps → Add app → Web (`</>`)** → nickname `Cassette.fm website` →
+   **Register app**. Firebase shows a `firebaseConfig = { apiKey: …, authDomain: …, projectId: …, appId: … }` block.
+2. Turn that block into JSON (keys and values in double quotes), for example:
+   `{"apiKey":"AIza…","authDomain":"cassette-fm.firebaseapp.com","projectId":"cassette-fm","storageBucket":"cassette-fm.firebasestorage.app","messagingSenderId":"123…","appId":"1:123…:web:abc…"}`
+3. GitHub repo → **Settings → Secrets and variables → Actions → Variables tab → New repository variable** →
+   name `FIREBASE_WEB_CONFIG`, value: the JSON. (These values are public by design; Firestore rules protect the data.)
+4. Firebase → **Authentication → Settings → Authorized domains → Add domain** → `<your-github-username>.github.io`.
+5. Run **Actions → Deploy to GitHub Pages**. The website now has real email + Google sign-in.
 
 ## Switches (in `src/app/data/app-info.ts`)
 

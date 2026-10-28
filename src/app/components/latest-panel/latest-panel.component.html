@@ -1,0 +1,120 @@
+<div class="scrim" [class.open]="ui.latestOpen()" (click)="close()"></div>
+
+<section class="latest" role="dialog" aria-label="Latest and trending songs" [class.open]="ui.latestOpen()"
+         [attr.aria-hidden]="!ui.latestOpen()" [attr.inert]="ui.latestOpen() ? null : ''">
+  <div class="head">
+    <div>
+      <h2>Latest <i>&amp;</i> Trending</h2>
+      <small>{{ latest.updated() || 'Fresh songs, every day' }}</small>
+    </div>
+    <button class="lang" type="button" (click)="openLanguages()"><app-icon name="globe" /> {{ library.language().name }}</button>
+    <button class="icon-btn" type="button" aria-label="Close" (click)="close()"><app-icon name="close" /></button>
+  </div>
+
+  <div class="tabs" role="tablist">
+    @for (t of tabs(); track t.key) {
+      <button class="tab" type="button" role="tab" [attr.aria-selected]="latest.tab() === t.key" (click)="setTab(t.key)">{{ t.name }}</button>
+    }
+  </div>
+
+  <div class="body">
+    <!-- YouTube player: always visible while a song plays (YouTube's rules), stops when this screen closes -->
+    <div class="video" [hidden]="!video()">
+      <div class="frame" #yt></div>
+      @if (video(); as v) {
+        <div class="video-bar">
+          <span class="info"><b>{{ v.title }}</b><span>{{ v.artist }}</span></span>
+          <button class="icon-btn small" type="button" aria-label="Previous" (click)="step(-1)"><app-icon name="previous" /></button>
+          <button class="icon-btn small" type="button" aria-label="Next" (click)="step(1)"><app-icon name="next" /></button>
+          <button class="icon-btn small" type="button" aria-label="Stop video" (click)="stopVideo()"><app-icon name="close" /></button>
+        </div>
+      }
+    </div>
+
+    <p class="note">{{ note() }}</p>
+
+    @if (latest.tab() === 'spotify') {
+      <div class="spotify-bar">
+        @if (spotify.connected()) {
+          <span class="sp-who"><span class="sp-dot"></span> {{ spotify.name() || 'Spotify' }}</span>
+          <button class="link" type="button" (click)="spotify.disconnect()">Disconnect</button>
+        } @else if (spotify.available) {
+          <button class="sp-connect" type="button" (click)="spotify.connect()"><span class="sp-dot"></span> Connect Spotify</button>
+          <small>Full songs with Spotify Premium · your liked songs & playlists</small>
+        }
+      </div>
+      @if (spotify.connected()) {
+        <div class="chips">
+          <button class="chip" type="button" [class.on]="spotifyView() === 'hits'" (click)="setSpotifyView('hits')">Hits this year</button>
+          <button class="chip" type="button" [class.on]="spotifyView() === 'liked'" (click)="setSpotifyView('liked')">Your liked</button>
+          <button class="chip" type="button" [class.on]="spotifyView() === 'playlists'" (click)="setSpotifyView('playlists')">Your playlists</button>
+          <button class="chip" type="button" [class.on]="spotifyView() === 'search'" (click)="setSpotifyView('search')">Search</button>
+        </div>
+        @if (spotifyView() === 'search') {
+          <form class="sp-search" (submit)="$event.preventDefault(); searchSpotify(q.value)">
+            <input #q type="search" placeholder="Search all of Spotify" aria-label="Search Spotify">
+            <button class="pill" type="submit" [disabled]="spotifyBusy()">Search</button>
+          </form>
+        }
+        @if (spotifyView() === 'playlists' && !openPlaylist()) {
+          <div class="playlists">
+            @for (p of spotify.playlists(); track p.id) {
+              <button class="pl" type="button" (click)="showPlaylist(p)">
+                <span class="cover" [style.background-image]="p.images?.[0]?.url ? 'url(' + p.images![0].url + ')' : null"></span>
+                <span class="info"><b>{{ p.name }}</b><span>{{ playlistCount(p) }} songs</span></span>
+              </button>
+            } @empty { <p class="empty">No playlists on your Spotify yet.</p> }
+          </div>
+        }
+        @if (openPlaylist(); as op) {
+          <button class="back" type="button" (click)="openPlaylist.set(null)">‹ {{ op.playlist.name }}</button>
+        }
+      }
+    }
+
+    @if (rows().length) {
+      @if (rows()[0].youtubeId) {
+        <button class="play-all" type="button" (click)="playAllVideos()"><app-icon name="play" /> Play all</button>
+      }
+      <ol class="rows">
+        @for (t of rows(); track t.id; let i = $index) {
+          <li class="row" [class.current]="video()?.id === t.id || latest.previewing() === t.id || spotify.nowPlaying()?.id === t.id">
+            <span class="num">{{ i + 1 }}</span>
+            <button class="cover" type="button" [style.background-image]="'url(' + t.cover + ')'" [attr.aria-label]="'Play ' + t.title" (click)="play(t, i)">
+              @if (latest.previewing() === t.id) {
+                <svg class="ring" viewBox="0 0 36 36" aria-hidden="true"><circle cx="18" cy="18" r="16" pathLength="100" [style.stroke-dashoffset]="100 - latest.previewProgress() * 100" /></svg>
+              }
+              <app-icon [name]="latest.previewing() === t.id ? 'pause' : 'play'" />
+            </button>
+            <span class="info">
+              <b>{{ t.title }}</b>
+              <span>{{ t.artist }}</span>
+            </span>
+            <span class="kind">{{ t.youtubeId ? 'Full' : t.spotifyUri ? (spotify.connected() ? 'Spotify' : 'Spotify ↗') : t.previewUrl ? '30s' : '' }}</span>
+            @if (t.spotifyUri && spotify.connected()) {
+              <button class="icon-btn small" type="button" aria-label="Save to Spotify" (click)="spotify.save(t)"><app-icon name="plus" /></button>
+            }
+            <button class="icon-btn small dim" type="button" [attr.aria-label]="outsideLabel(t)" [title]="outsideLabel(t)" (click)="openOutside(t)"><app-icon name="external" /></button>
+          </li>
+        }
+      </ol>
+      @if (latest.tab() === 'spotify' && spotifyView() === 'search' && spotifyResults().length) {
+        <button class="more" type="button" [disabled]="spotifyBusy()" (click)="moreSpotify()">More results</button>
+      }
+    } @else if (latest.loading() || spotifyBusy()) {
+      <p class="empty">Loading…</p>
+    } @else if (!(latest.tab() === 'spotify' && spotifyView() !== 'hits')) {
+      <div class="empty">
+        <b>No songs here yet</b>
+        @switch (latest.tab()) {
+          @case ('new') { New {{ library.language().name }} songs appear here once the YouTube key is set up (see LATEST.md). Try <em>Top 100 India</em> meanwhile. }
+          @case ('trending') { Trending songs appear here once the YouTube key is set up (see LATEST.md). }
+          @case ('charts') { The chart refreshes every day. Check your internet and open this again. }
+          @case ('spotify') { {{ spotify.connected() ? 'Finding this year’s ' + library.language().name + ' hits on Spotify…' : 'Connect Spotify to see this year’s hits.' }} }
+        }
+      </div>
+    }
+
+    <p class="legal">Songs and covers belong to their owners. YouTube songs play in YouTube's own player · previews by Apple Music · Spotify content via Spotify.</p>
+  </div>
+</section>

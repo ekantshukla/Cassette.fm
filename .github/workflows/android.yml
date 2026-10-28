@@ -55,6 +55,9 @@ jobs:
         run: |
           sed -i "s|^export const GITHUB_REPO = .*|export const GITHUB_REPO = '${{ github.repository }}';|" src/app/data/app-info.ts
           sed -i "s|^export const APP_VERSION = .*|export const APP_VERSION = '${VERSION_NAME}';|" src/app/data/app-info.ts
+          if [ -n "${{ vars.SPOTIFY_CLIENT_ID }}" ]; then
+            sed -i "s|^export const SPOTIFY_CLIENT_ID = .*|export const SPOTIFY_CLIENT_ID = '${{ vars.SPOTIFY_CLIENT_ID }}';|" src/app/data/spotify-config.ts
+          fi
 
       # Accounts (sign up / log in). Needs the GOOGLE_SERVICES_JSON secret — see ACCOUNTS.md.
       # Without it the app is built without accounts (everything else works).
@@ -75,6 +78,10 @@ jobs:
       - name: Copy playlists from the website
         continue-on-error: true
         run: curl -fsSL "https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/playlists.json" -o public/playlists.json
+
+      - name: Copy latest songs from the website
+        continue-on-error: true
+        run: curl -fsSL "https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/latest.json" -o public/latest.json
 
       - run: npm run build
       - run: npx cap sync android

@@ -23,6 +23,8 @@ export class HeaderComponent {
   readonly menuOpen = input(false);
   readonly menuClick = output<void>();
 
+  protected readonly firstName = computed(() => this.account.displayName().split(/\s+/)[0]);
+
   protected readonly liveText = computed(() => {
     if (this.player.isTuning()) return 'Tuning in';
     if (this.player.isPlaying()) return 'On air';

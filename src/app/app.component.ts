@@ -2,6 +2,9 @@ import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, afterNextRe
 
 import { DOWNLOADS_STATION, LIKED_STATION } from './data/stations';
 import { AccountScreenComponent } from './components/account-screen/account-screen.component';
+import { AddToPlaylistComponent } from './components/add-to-playlist/add-to-playlist.component';
+import { BottomNavComponent } from './components/bottom-nav/bottom-nav.component';
+import { LatestPanelComponent } from './components/latest-panel/latest-panel.component';
 import { BokehBackgroundComponent } from './components/bokeh-background/bokeh-background.component';
 import { HeaderComponent } from './components/header/header.component';
 import { IconComponent } from './components/icon/icon.component';
@@ -20,13 +23,14 @@ import { LibraryService } from './services/library.service';
 import { NativeService } from './services/native.service';
 import { PlayerService } from './services/player.service';
 import { SettingsService } from './services/settings.service';
+import { ToastService } from './services/toast.service';
 import { UiService } from './services/ui.service';
 
 /** Page layout. Wires the pieces together; the logic lives in the services. */
 @Component({
   selector: 'app-root',
   imports: [
-    AccountScreenComponent, BokehBackgroundComponent, HeaderComponent, IconComponent, LanguagePanelComponent, MiniPlayerComponent, PlayerCardComponent, PlaylistDrawerComponent,
+    AccountScreenComponent, AddToPlaylistComponent, BottomNavComponent, LatestPanelComponent, BokehBackgroundComponent, HeaderComponent, IconComponent, LanguagePanelComponent, MiniPlayerComponent, PlayerCardComponent, PlaylistDrawerComponent,
     SettingsPanelComponent, SongListComponent, StationChipsComponent, ToastComponent, TuningPopupComponent,
   ],
   templateUrl: './app.component.html',
@@ -41,11 +45,12 @@ export class AppComponent {
   protected readonly account = inject(AccountService);
   protected readonly native = inject(NativeService);
   private readonly settings = inject(SettingsService);
-  private readonly ui = inject(UiService);
+  protected readonly ui = inject(UiService);
+  private readonly toast = inject(ToastService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly playerCard = viewChild.required(PlayerCardComponent, { read: ElementRef });
 
-  protected readonly menuOpen = signal(false);
+  protected readonly menuOpen = this.ui.menuOpen;
   protected readonly year = new Date().getFullYear();
   private readonly playerCardVisible = signal(true);
   /** Phones only (hidden by CSS on wide screens): show once the big player scrolls away. */
@@ -62,6 +67,16 @@ export class AppComponent {
       untracked(() => this.downloads.download(liked, true));
     });
 
+    // Android: the first time music starts, check that the lock-screen controls can be shown.
+    let checkedNotifications = false;
+    effect(() => {
+      if (!this.native.isApp || checkedNotifications || !this.player.isPlaying()) return;
+      checkedNotifications = true;
+      this.native.notificationsAllowed().then(ok => {
+        if (!ok) this.toast.show('Turn on notifications (Settings ⚙) to control music from the lock screen.', 4500);
+      });
+    });
+
     // Phone back button: close what's open, otherwise go to the background and keep playing.
     this.native.onBack(() => {
       if (this.account.screenOpen()) {
@@ -69,7 +84,11 @@ export class AppComponent {
         this.account.skip();
         return true;
       }
+      if (this.ui.addToPlaylist()) { this.ui.addToPlaylist.set(null); return true; }
+      if (this.ui.searchOpen()) { this.ui.searchOpen.set(false); return true; }
       if (this.settings.open()) { this.settings.open.set(false); return true; }
+      if (this.ui.languageOpen()) { this.ui.languageOpen.set(false); return true; }
+      if (this.ui.latestOpen()) { this.ui.latestOpen.set(false); return true; }
       if (this.ui.languageOpen()) { this.ui.languageOpen.set(false); return true; }
       if (this.menuOpen()) { this.menuOpen.set(false); return true; }
       return false;
@@ -80,6 +99,11 @@ export class AppComponent {
       observer.observe(this.playerCard().nativeElement);
       this.destroyRef.onDestroy(() => observer.disconnect());
     });
+  }
+
+  protected openLibrary(): void {
+    this.ui.menuTab.set('library');
+    this.menuOpen.set(true);
   }
 
   /** Opens the songs saved for offline (and plays them, if there are any). */

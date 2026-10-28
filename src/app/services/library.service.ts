@@ -8,9 +8,10 @@ import { ALL_STATIONS, DEFAULT_LANGUAGE, Language, findLanguage, stationsFor } f
 import { CACHE_DAYS, DOWNLOADS_STATION, LIKED_STATION, MAX_SONGS, MIN_SONGS_BEFORE_BACKUP, STATIONS } from '../data/stations';
 import { ArchiveDoc } from '../models/archive.model';
 import { Song, songKey } from '../models/song.model';
-import { Station, StationGroup } from '../models/station.model';
+import { Station, StationGroup, isLocalStation } from '../models/station.model';
 import { firstValue, normalize } from '../utils/text.utils';
 import { ArchiveService } from './archive.service';
+import { CollectionsService, SMART_PREFIX, SmartKind, USER_PREFIX } from './collections.service';
 import { SongFinderService } from './song-finder.service';
 import { StorageService } from './storage.service';
 
@@ -53,6 +54,8 @@ export class LibraryService {
   private readonly archive = inject(ArchiveService);
   private readonly storage = inject(StorageService);
   private readonly finder = inject(SongFinderService);
+  /** The listener's own playlists, smart playlists and pins. */
+  readonly collections = inject(CollectionsService);
 
   /** Songs per playlist key. Lists grow while a playlist loads. */
   private readonly songsByStation = signal<Record<string, Song[]>>({});
@@ -94,6 +97,8 @@ export class LibraryService {
     if (temp?.key === key) return temp;
     if (key === LIKED_STATION.key) return LIKED_STATION;
     if (key === DOWNLOADS_STATION.key) return DOWNLOADS_STATION;
+    if (key.startsWith(USER_PREFIX)) return this.collections.userStations().find(s => s.key === key);
+    if (key.startsWith(SMART_PREFIX)) return this.collections.smartStations.find(s => s.key === key);
     // Look in every language, so a song saved from another language still resumes after a refresh.
     return this.stations().find(s => s.key === key) ?? ALL_STATIONS.find(s => s.key === key);
   }
@@ -108,6 +113,8 @@ export class LibraryService {
   songsFor(key: string): Song[] {
     if (key === LIKED_STATION.key) return this.liked();
     if (key === DOWNLOADS_STATION.key) return this.downloaded();
+    if (key.startsWith(USER_PREFIX)) return this.collections.playlist(key.slice(USER_PREFIX.length))?.songs ?? [];
+    if (key.startsWith(SMART_PREFIX)) return this.collections.smartSongs(key.slice(SMART_PREFIX.length) as SmartKind, this.liked());
     return this.songsByStation()[key] ?? [];
   }
 
@@ -161,13 +168,15 @@ export class LibraryService {
   }
 
   isFinished(key: string): boolean {
-    return key === LIKED_STATION.key || key === DOWNLOADS_STATION.key || this.loadingByStation()[key] === false;
+    return key === LIKED_STATION.key || key === DOWNLOADS_STATION.key || key.startsWith(USER_PREFIX) || key.startsWith(SMART_PREFIX)
+      || this.loadingByStation()[key] === false;
   }
 
   /** Opens a playlist in the song list and starts loading its songs. */
   select(station: Station): void {
     if (station.isTemporary) this.temporaryStation.set(station);
     else this.storage.set(KEY_STATION, station.key);
+    if (!station.isTemporary) this.collections.markOpened(station.key);
     this.selectedKey.set(station.key);
     this.load(station);
   }
@@ -180,7 +189,7 @@ export class LibraryService {
    * Safe to call repeatedly.
    */
   async load(station: Station): Promise<void> {
-    if (station.isLiked || station.isDownloads || this.loadingByStation()[station.key] !== undefined) return;
+    if (isLocalStation(station) || this.loadingByStation()[station.key] !== undefined) return;
 
     if (!station.isTemporary) {
       this.setLoading(station.key, true);

@@ -66,6 +66,12 @@
     <input class="range" id="volume" type="range" min="0" max="100" aria-label="Volume"
            [value]="player.volume()" [style.--p]="player.volume() + '%'"
            (input)="player.setVolume(+volume.value)" #volume>
+    <button class="icon-btn small" type="button" aria-label="Add to playlist" [disabled]="!song()" (click)="addToPlaylist()">
+      <app-icon name="plus" />
+    </button>
+    <button class="icon-btn small" type="button" aria-label="Sound: equaliser, bass, 8D" [class.on]="settings.needsAudioEffects()" (click)="settings.openAt('sound')">
+      <app-icon name="settings" />
+    </button>
     <button class="icon-btn small sleep" type="button" aria-label="Sleep timer"
             [class.on]="sleepOn()" (click)="settings.openAt('sleep')">
       <app-icon name="moon" />

@@ -15,7 +15,15 @@
       <section data-section="account">
         @if (account.user(); as user) {
           <div class="profile">
-            <div class="avatar">{{ account.initials() }}</div>
+            <label class="avatar photo-pick" [attr.aria-label]="account.avatar() ? 'Change profile photo' : 'Add profile photo'">
+              @if (account.avatar(); as photo) {
+                <img [src]="photo" alt="" referrerpolicy="no-referrer">
+              } @else {
+                {{ account.initials() }}
+              }
+              <span class="cam" aria-hidden="true">📷</span>
+              <input type="file" accept="image/*" hidden (change)="pickPhoto($event)">
+            </label>
             <div class="who">
               @if (editingName()) {
                 <input class="name-input" type="text" aria-label="Your name" [value]="account.displayName()" #nameInput
@@ -30,6 +38,15 @@
           @if (user.email && !user.emailVerified && !(user.providerData ?? []).length) {
             <p class="hint">Check your inbox to confirm your email.</p>
           }
+          <div class="photo-actions">
+            <label class="chip">
+              {{ account.photo() ? 'Change photo' : 'Upload photo' }}
+              <input type="file" accept="image/*" hidden (change)="pickPhoto($event)">
+            </label>
+            @if (account.photo()) {
+              <button class="chip" type="button" (click)="removePhoto()">Remove photo</button>
+            }
+          </div>
           <div class="account-actions">
             <button class="chip" type="button" (click)="logOut()">Log out</button>
             <button class="danger small" type="button" (click)="deleteAccount()"><app-icon name="trash" /> {{ deleteLabel() }}</button>
@@ -37,11 +54,51 @@
         } @else {
           <button class="sign-in-card" type="button" (click)="openSignIn()">
             <div class="avatar empty">♪</div>
-            <span><b>Log in or sign up free</b><small>Keep your liked songs and settings on every phone</small></span>
+            <span><b>Log in or sign up free</b><small>{{ account.demo ? 'Demo account: keeps your likes, playlists and sound per listener on this device' : 'Keep your liked songs, playlists and settings on every phone' }}</small></span>
           </button>
         }
       </section>
     }
+
+    @if (notificationsOff()) {
+      <section data-section="controls">
+        <div class="storage warn">
+          <div><b>Player buttons are hidden</b><small>Notifications are off for Cassette.fm, so Android can't show play / pause / next on the lock screen or while the app is in the background.</small></div>
+          <button class="pill" type="button" (click)="openNotificationSettings()">Turn on</button>
+        </div>
+      </section>
+    }
+
+    <!-- ================= Music sources & history ================= -->
+    <section data-section="sources">
+      <h3>Music sources</h3>
+      <div class="storage lang-row">
+        <div><b>Music language</b><small>{{ library.language().name }} · {{ library.language().native }}</small></div>
+        <button class="chip" type="button" (click)="openLanguages()">Change</button>
+      </div>
+      @if (spotify.available) {
+        <div class="storage">
+          <div>
+            <b>Spotify</b>
+            <small>{{ spotify.connected() ? 'Connected as ' + (spotify.name() || 'you') + ' · full songs with Premium' : 'Search Spotify, your liked songs & playlists, full songs with Premium' }}</small>
+          </div>
+          @if (spotify.connected()) {
+            <button class="chip" type="button" (click)="spotify.disconnect()">Disconnect</button>
+          } @else {
+            <button class="pill" type="button" (click)="spotify.connect()">Connect</button>
+          }
+        </div>
+      }
+      <p class="hint">Classics: Internet Archive (plays offline). New songs: YouTube label channels, Apple Music charts{{ spotify.available ? ' and Spotify' : '' }} — open <b>Latest</b> on the home screen.</p>
+
+      <div class="label">Listening history</div>
+      <div class="storage">
+        <div><b>{{ historyCount() }} songs played</b><small>Powers On Repeat, Your Top Songs and Forgotten Favourites. Stays on this device.</small></div>
+        @if (historyCount()) {
+          <button class="chip" type="button" (click)="clearHistory()">{{ confirmClear() ? 'Tap again' : 'Clear' }}</button>
+        }
+      </div>
+    </section>
 
     <!-- ================= Look ================= -->
     <section data-section="look">
@@ -76,26 +133,86 @@
 
     <!-- ================= Sound ================= -->
     <section data-section="sound">
-      <h3>Sound</h3>
+      <h3>Sound <button class="link reset-sound" type="button" (click)="resetSound()">Reset sound</button></h3>
 
-      <div class="label">Equaliser</div>
+      <div class="label">Presets</div>
       <div class="chips">
         @for (p of presets; track p.key) {
           <button class="chip" type="button" [class.on]="settings.eqPreset() === p.key" (click)="settings.setEqPreset(p.key)">{{ p.name }}</button>
+        }
+        @for (p of settings.myPresets(); track p.name) {
+          <span class="chip mine" [class.on]="settings.eqPreset() === 'my:' + p.name">
+            <button type="button" (click)="settings.applyMyPreset(p.name)">★ {{ p.name }}</button>
+            <button type="button" class="x" [attr.aria-label]="'Delete preset ' + p.name" (click)="settings.deleteMyPreset(p.name)">×</button>
+          </span>
         }
         @if (settings.eqPreset() === custom) {
           <span class="chip on static">Custom</span>
         }
       </div>
-      <div class="bands">
+
+      <div class="label">10-band equaliser <small>dB</small></div>
+      <div class="eq">
+        <svg class="curve" viewBox="0 0 100 40" preserveAspectRatio="none" aria-hidden="true">
+          <path [attr.d]="curvePath()" />
+        </svg>
         @for (label of bandLabels; track label; let i = $index) {
           @let v = bandValue(i);
-          <div class="band">
-            <span class="hz">{{ label }}</span>
-            <input class="range" type="range" min="-12" max="12" step="1" [attr.aria-label]="'Equaliser ' + label + ' Hz'"
-                   [value]="v" [style.--p]="((v + 12) / 24) * 100 + '%'" (input)="settings.setEqBand(i, +$any($event.target).value)">
+          <div class="col">
             <span class="db">{{ v > 0 ? '+' + v : v }}</span>
+            <input class="range vertical" type="range" min="-12" max="12" step="1" [attr.aria-label]="'Equaliser ' + label + ' Hz'"
+                   [value]="v" [style.--p]="((v + 12) / 24) * 100 + '%'" (input)="settings.setEqBand(i, +$any($event.target).value)">
+            <span class="hz">{{ label }}</span>
           </div>
+        }
+      </div>
+
+      <div class="sliders">
+        <label class="slider">
+          <span><b>Bass boost</b><em>{{ settings.bass() ? '+' + settings.bass() + ' dB' : 'Off' }}</em></span>
+          <input class="range" type="range" min="0" max="12" step="1" [value]="settings.bass()" [style.--p]="(settings.bass() / 12) * 100 + '%'"
+                 (input)="settings.setBass(+$any($event.target).value)">
+        </label>
+        <label class="slider">
+          <span><b>Treble</b><em>{{ settings.treble() > 0 ? '+' : '' }}{{ settings.treble() }} dB</em></span>
+          <input class="range" type="range" min="-6" max="6" step="1" [value]="settings.treble()" [style.--p]="((settings.treble() + 6) / 12) * 100 + '%'"
+                 (input)="settings.setTreble(+$any($event.target).value)">
+        </label>
+        <label class="slider">
+          <span><b>Volume boost</b><em>{{ settings.boost() ? '+' + settings.boost() + ' dB' : 'Off' }}</em></span>
+          <input class="range" type="range" min="0" max="9" step="1" [value]="settings.boost()" [style.--p]="(settings.boost() / 9) * 100 + '%'"
+                 (input)="settings.setBoost(+$any($event.target).value)">
+        </label>
+        <label class="slider">
+          <span><b>Stereo width</b><em>{{ settings.width() === 0 ? 'Mono' : settings.width() === 100 ? 'Normal' : settings.width() + '%' }}</em></span>
+          <input class="range" type="range" min="0" max="200" step="10" [value]="settings.width()" [style.--p]="(settings.width() / 200) * 100 + '%'"
+                 (input)="settings.setWidth(+$any($event.target).value)">
+        </label>
+        <label class="slider">
+          <span><b>Balance</b><em>{{ balanceText() }}</em></span>
+          <input class="range" type="range" min="-100" max="100" step="10" [value]="settings.balance()" [style.--p]="((settings.balance() + 100) / 200) * 100 + '%'"
+                 (input)="settings.setBalance(+$any($event.target).value)">
+        </label>
+      </div>
+      <p class="hint">Volume boost has a built-in limiter, so it gets louder without crackling.</p>
+
+      <label class="toggle">
+        <span><b>8D audio</b><small>The song slowly circles around your head. Put on headphones.</small></span>
+        <input type="checkbox" role="switch" [checked]="settings.eightD()" (change)="settings.setEightD($any($event.target).checked)">
+        <i></i>
+      </label>
+
+      <div class="label">Space</div>
+      <div class="chips">
+        @for (sp of spaces; track sp.key) {
+          <button class="chip" type="button" [class.on]="settings.space() === sp.key" (click)="settings.setSpace(sp.key)">{{ sp.name }}</button>
+        }
+      </div>
+
+      <div class="label">Speed</div>
+      <div class="chips">
+        @for (sp of speeds; track sp) {
+          <button class="chip" type="button" [class.on]="settings.speed() === sp" (click)="settings.setSpeed(sp)">{{ sp === 1 ? 'Normal' : sp + '×' }}</button>
         }
       </div>
 
@@ -111,7 +228,11 @@
           <button class="chip" type="button" [class.on]="settings.fadeSeconds() === s" (click)="settings.setFadeSeconds(s)">{{ s ? s + ' sec' : 'Off' }}</button>
         }
       </div>
-      <p class="hint">The end of each song fades out and the next one fades in.</p>
+
+      <form class="save-preset" (submit)="$event.preventDefault(); savePreset(presetName.value); presetName.value = ''">
+        <input #presetName type="text" maxlength="24" placeholder="Name this sound, e.g. Car bass" aria-label="Preset name">
+        <button class="pill" type="submit">★ Save my sound</button>
+      </form>
     </section>
 
     <!-- ================= Sleep timer ================= -->

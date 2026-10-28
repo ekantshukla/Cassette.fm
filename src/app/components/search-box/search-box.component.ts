@@ -1,5 +1,5 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, computed, inject, signal, viewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, computed, effect, inject, signal, untracked, viewChild } from '@angular/core';
 
 import { HINDI, STATIONS } from '../../data/stations';
 import { ArchiveDoc } from '../../models/archive.model';
@@ -8,6 +8,7 @@ import { ArchiveService } from '../../services/archive.service';
 import { LibraryService, SongMatch } from '../../services/library.service';
 import { PlayerService } from '../../services/player.service';
 import { ToastService } from '../../services/toast.service';
+import { UiService } from '../../services/ui.service';
 import { VoiceSearchService } from '../../services/voice-search.service';
 import { cleanName, firstValue, highlight, normalize } from '../../utils/text.utils';
 import { IconComponent } from '../icon/icon.component';
@@ -36,6 +37,7 @@ export class SearchBoxComponent {
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   protected readonly voice = inject(VoiceSearchService);
   private readonly toast = inject(ToastService);
+  private readonly ui = inject(UiService);
   private readonly input = viewChild<ElementRef<HTMLInputElement>>('input');
 
   protected readonly text = signal('');
@@ -55,8 +57,22 @@ export class SearchBoxComponent {
   constructor() {
     const phone = matchMedia('(max-width: 600px)');
     this.isPhone.set(phone.matches);
-    phone.addEventListener('change', e => { this.isPhone.set(e.matches); this.expanded.set(false); });
+    phone.addEventListener('change', e => { this.isPhone.set(e.matches); this.fold(); });
     inject(DestroyRef).onDestroy(() => clearTimeout(this.timer));
+    // Phones: Search in the bottom bar opens the field over the header.
+    effect(() => {
+      const open = this.ui.searchOpen();
+      untracked(() => {
+        if (open && this.isPhone() && !this.expanded()) this.expand();
+        if (!open && this.isPhone() && this.expanded()) this.close(true);
+      });
+    });
+  }
+
+  /** Folds the phone search field back up. */
+  private fold(): void {
+    this.expanded.set(false);
+    this.ui.searchOpen.set(false);
   }
   protected readonly highlight = highlight;
 
@@ -78,6 +94,7 @@ export class SearchBoxComponent {
   /** Search button tapped: show the field over the header and put the cursor in it. */
   protected expand(): void {
     this.expanded.set(true);
+    this.ui.searchOpen.set(true);
     setTimeout(() => this.input()?.nativeElement.focus());
   }
 
@@ -134,8 +151,9 @@ export class SearchBoxComponent {
 
   protected onDocumentClick(event: MouseEvent): void {
     if (this.host.nativeElement.contains(event.target as Node)) return;
+    if ((event.target as Element | null)?.closest?.('app-bottom-nav')) return; // the bottom bar handles its own Search button
     this.isOpen.set(false);
-    if (!this.text()) this.expanded.set(false); // tapped away from an empty search: fold back to the button
+    if (!this.text()) this.fold(); // tapped away from an empty search: fold back to the button
   }
 
   private afterPick(): void {
@@ -146,7 +164,7 @@ export class SearchBoxComponent {
   protected close(clear: boolean): void {
     if (this.voice.listening()) this.voice.stop();
     this.isOpen.set(false);
-    this.expanded.set(false);
+    this.fold();
     if (clear) {
       this.text.set('');
       const el = this.input()?.nativeElement;

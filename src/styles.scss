@@ -33,6 +33,8 @@
   // Layout
   --gutter: 20px;
   --header-height: 70px;
+  // Phones: height of the bottom bar (Home, Search, Latest, Library, Settings). 0 on wider screens.
+  --nav-h: 0px;
 
   color-scheme: dark;
 }
@@ -223,4 +225,10 @@ button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
 
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; animation: none !important; }
+}
+
+@media (max-width: 600px) {
+  :root { --nav-h: calc(62px + env(safe-area-inset-bottom, 0px)); }
+  // Room for the bottom bar, so the page's end isn't hidden behind it.
+  body { padding-bottom: var(--nav-h); }
 }

@@ -1,0 +1,45 @@
+:host { display: none; }
+
+/* Phones only */
+@media (max-width: 600px) {
+  :host {
+    display: block;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 49; // above the Library / Latest / Settings panels, below sheets and the sign-in screen
+  }
+}
+
+.bar {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  height: var(--nav-h);
+  padding: 4px max(6px, env(safe-area-inset-right, 0px)) env(safe-area-inset-bottom, 0px) max(6px, env(safe-area-inset-left, 0px));
+  background: linear-gradient(180deg, rgba(14, 7, 26, 0.86), rgba(10, 4, 20, 0.98));
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  min-width: 0;
+  border: 0;
+  background: none;
+  color: var(--faint);
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  transition: color 0.15s;
+
+  app-icon { width: 23px; height: 23px; }
+  span { white-space: nowrap; }
+  &.on { color: var(--text); app-icon { color: var(--rose); } }
+  &:active app-icon { transform: scale(0.9); }
+}

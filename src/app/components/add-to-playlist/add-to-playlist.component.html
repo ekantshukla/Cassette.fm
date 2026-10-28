@@ -1,0 +1,40 @@
+@if (songs(); as list) {
+  <div class="scrim" (click)="close()"></div>
+  <div class="sheet" role="dialog" aria-label="Add to playlist">
+    <div class="grab" aria-hidden="true"></div>
+    <div class="head">
+      <div><h2>Add to playlist</h2><small>{{ title() }}</small></div>
+      <button class="icon-btn" type="button" aria-label="Close" (click)="close()"><app-icon name="close" /></button>
+    </div>
+
+    @if (creating()) {
+      <form class="new" (submit)="$event.preventDefault(); create(n.value)">
+        <input #n type="text" maxlength="40" placeholder="Playlist name" aria-label="Playlist name" autofocus>
+        <button class="pill" type="submit">Create</button>
+      </form>
+    } @else {
+      <button class="row new-btn" type="button" (click)="creating.set(true)">
+        <span class="tile plus"><app-icon name="plus" /></span><b>New playlist</b>
+      </button>
+    }
+
+    <button class="row" type="button" (click)="likeAll()">
+      <span class="tile" style="--c: #FF6F91">♥</span>
+      <span class="text"><b>Liked songs</b><span>{{ library.liked().length }} songs</span></span>
+    </button>
+
+    @if (collections.playlists().length > 6) {
+      <input class="find" type="search" placeholder="Find a playlist" [value]="filter()" (input)="filter.set(value($event))">
+    }
+
+    <div class="list">
+      @for (p of playlists(); track p.id) {
+        <button class="row" type="button" (click)="add(p)">
+          <span class="tile" [style.--c]="p.color">{{ p.emoji }}</span>
+          <span class="text"><b>{{ p.name }}</b><span>{{ p.songs.length }} songs</span></span>
+          @if (has(p)) { <app-icon name="check" class="tick" /> }
+        </button>
+      }
+    </div>
+  </div>
+}

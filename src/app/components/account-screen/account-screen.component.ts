@@ -84,7 +84,9 @@ export class AccountScreenComponent {
   protected async forgot(): Promise<void> {
     if (!/\S+@\S+\.\S+/.test(this.email())) { this.error.set('Enter the email you signed up with.'); return; }
     const ok = await this.run(() => this.account.resetPassword(this.email()));
-    if (ok) this.info.set(`We've sent a link to ${this.email().trim()}. Open it to choose a new password, then log in.`);
+    if (ok) this.info.set(this.account.demo
+      ? 'Demo accounts live on this device, so no email is sent. If you forgot the password, sign up again with another email, or delete the account in Settings.'
+      : `We've sent a link to ${this.email().trim()}. Open it to choose a new password, then log in.`);
   }
 
   protected async google(): Promise<void> {

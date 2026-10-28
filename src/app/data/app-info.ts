@@ -11,6 +11,13 @@ export const APP_VERSION = '1.0.0';
  * GOOGLE_SERVICES_JSON secret is set (see ACCOUNTS.md). The website never shows accounts.
  */
 export const ACCOUNTS_ENABLED = false;
+/**
+ * Real accounts on the WEBSITE: the Firebase web app settings as JSON, e.g.
+ * '{"apiKey":"…","authDomain":"cassette-fm.firebaseapp.com","projectId":"cassette-fm","appId":"…"}'.
+ * Filled in by the workflow from the repository variable FIREBASE_WEB_CONFIG (see ACCOUNTS.md).
+ * Empty = the website uses demo accounts saved in the browser.
+ */
+export const FIREBASE_WEB_CONFIG = '';
 /** Sign in with a phone number + OTP. Off: each OTP text costs money on Firebase (see ACCOUNTS.md). */
 export const PHONE_SIGN_IN = false;
 /** true = the app can't be used without an account (like Spotify). false = "Not now" is allowed. */

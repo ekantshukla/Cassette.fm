@@ -1,6 +1,6 @@
 <app-bokeh-background />
 
-<app-header [menuOpen]="menuOpen()" (menuClick)="menuOpen.set(true)" />
+<app-header [menuOpen]="menuOpen()" (menuClick)="openLibrary()" />
 
 @if (!native.online()) {
   <div class="offline" role="status">
@@ -16,6 +16,17 @@
       <div class="hello-top">
         <h1>Love songs that <i>never get old.</i></h1>
         <div class="mine">
+        <button class="liked-btn new-btn" type="button" aria-label="Latest and trending songs" (click)="ui.latestOpen.set(true)">
+          <app-icon name="spark" />
+          <span class="label">Latest</span>
+        </button>
+        <button class="liked-btn lib-btn" type="button" aria-label="Your Library" (click)="openLibrary()">
+          <app-icon name="library" />
+          <span class="label">Library</span>
+          @if (library.collections.playlists().length) {
+            <span class="count">{{ library.collections.playlists().length }}</span>
+          }
+        </button>
         <button class="liked-btn dl-btn" type="button" aria-label="Downloads"
                 [attr.aria-pressed]="!!library.selected().isDownloads" (click)="openDownloads()">
           <app-icon name="downloaded" />
@@ -56,5 +67,8 @@
 <app-language-panel />
 <app-settings-panel />
 <app-account-screen />
+<app-latest-panel />
+<app-add-to-playlist />
+<app-bottom-nav />
 <app-tuning-popup />
 <app-toast />

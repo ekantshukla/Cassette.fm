@@ -88,3 +88,8 @@
 
   @keyframes rise { from { transform: translateY(40px); opacity: 0; } }
 }
+
+@media (max-width: 600px) {
+  .scrim { bottom: var(--nav-h); }
+  .panel { bottom: var(--nav-h); }
+}

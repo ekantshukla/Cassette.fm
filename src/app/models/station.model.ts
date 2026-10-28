@@ -34,6 +34,16 @@ export interface Station {
   isDownloads?: boolean;
   /** Made on the fly from a search result; never saved */
   isTemporary?: boolean;
+
+  /** A playlist the listener made themselves (Library → Create) */
+  isUser?: boolean;
+  /** A smart playlist that fills itself from the listener's own plays (On Repeat, Most played …) */
+  isSmart?: boolean;
+}
+
+/** Lists filled on this device (likes, downloads, own playlists, smart lists): nothing to look up online. */
+export function isLocalStation(station: Station | undefined | null): boolean {
+  return !!station && !!(station.isLiked || station.isDownloads || station.isUser || station.isSmart);
 }
 
 export interface StationGroup {

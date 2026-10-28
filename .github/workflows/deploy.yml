@@ -34,6 +34,23 @@ jobs:
       - name: Point the site at this repo
         run: sed -i "s|^export const GITHUB_REPO = .*|export const GITHUB_REPO = '${{ github.repository }}';|" src/app/data/app-info.ts
 
+      # Optional: real sign-up / log-in on the website (repository VARIABLE FIREBASE_WEB_CONFIG, see ACCOUNTS.md).
+      - name: Website accounts (Firebase)
+        if: ${{ vars.FIREBASE_WEB_CONFIG != '' }}
+        env:
+          CONFIG: ${{ vars.FIREBASE_WEB_CONFIG }}
+        run: |
+          node -e "
+            const fs = require('fs'), f = 'src/app/data/app-info.ts';
+            const json = JSON.stringify(JSON.parse(process.env.CONFIG));
+            fs.writeFileSync(f, fs.readFileSync(f, 'utf8').replace(/^export const FIREBASE_WEB_CONFIG = .*$/m, 'export const FIREBASE_WEB_CONFIG = ' + JSON.stringify(json) + ';'));
+          "
+
+      # Optional: "Connect Spotify" (repository VARIABLE SPOTIFY_CLIENT_ID, see SPOTIFY.md).
+      - name: Spotify client ID
+        if: ${{ vars.SPOTIFY_CLIENT_ID != '' }}
+        run: sed -i "s|^export const SPOTIFY_CLIENT_ID = .*|export const SPOTIFY_CLIENT_ID = '${{ vars.SPOTIFY_CLIENT_ID }}';|" src/app/data/spotify-config.ts
+
       # Look up every playlist on archive.org now, so visitors get them instantly.
       # If this fails, the site still works: it falls back to looking songs up live.
       - name: Build playlists
@@ -42,6 +59,17 @@ jobs:
         timeout-minutes: 45   # ~100 playlists across 13 languages
         env:
           PREVIOUS_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/playlists.json
+
+      # "Latest & Trending": Apple Music charts always; YouTube and Spotify when their secrets are set (see LATEST.md).
+      - name: Build latest songs
+        run: npm run latest
+        continue-on-error: true
+        timeout-minutes: 15
+        env:
+          PREVIOUS_LATEST_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/latest.json
+          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
+          SPOTIFY_CLIENT_ID: ${{ vars.SPOTIFY_CLIENT_ID }}
+          SPOTIFY_CLIENT_SECRET: ${{ secrets.SPOTIFY_CLIENT_SECRET }}
 
       - run: npm run build
       - uses: actions/upload-pages-artifact@v3
