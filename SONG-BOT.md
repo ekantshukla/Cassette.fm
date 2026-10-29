@@ -9,7 +9,10 @@ actors, a scene, the year, or a few words, typed or said with the mic.
 The AI works out which song(s) you mean and offers, for each one:
 
 1. **Play here**: when a copy is on the Internet Archive, where the app's songs come from. It plays in
-   the normal player, and Next moves through the AI's other suggestions.
+   the normal player (ad free, and it can be downloaded), and Next moves through the AI's other suggestions.
+   The app looks hard for a copy: the film's album in the song's language, jukebox and full-album uploads,
+   the song's name in its usual spellings (Deewana / Diwana / Divana), and the name with a singer. Each match
+   must be the right song by name (and singer, when known) and full length, never a clip, ringtone or karaoke.
 2. **Watch video here**: the official video in YouTube's own player, inside the chat (needs the
    optional YouTube key below). It stops when you close the chat.
 3. **Listen free on** YouTube, JioSaavn, Spotify, YouTube Music, Gaana or Apple Music. Each opens that

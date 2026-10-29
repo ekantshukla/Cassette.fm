@@ -37,8 +37,9 @@
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   animation: open-search 0.18s ease-out;
 
-  .field { flex: 1; }
+  .field { flex: 1; min-width: 0; position: relative; z-index: 3; } // min-width 0: the ✕ always fits on screen
   .close-btn {
+    position: relative; z-index: 3; // above the dimmed page
     flex: none; width: 40px; height: 40px;
     display: grid; place-items: center;
     border-radius: 50%; border: 1px solid var(--line); background: rgba(255, 255, 255, 0.07);
@@ -109,6 +110,7 @@
 input {
   flex: 1;
   min-width: 0;
+  width: 0; // lets the field shrink on narrow phones instead of pushing the ✕ off screen
   border: 0;
   outline: 0;
   background: transparent;

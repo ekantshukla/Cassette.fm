@@ -25,6 +25,7 @@
   }
   &.open::after { animation: none; }
   &.hidden { display: none; } // out of the way while search is open
+  &.lift { bottom: calc(96px + env(safe-area-inset-bottom, 0px)); } // tablets: above the mini player
 }
 @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(var(--rose-rgb), 0.55); } 70%, 100% { box-shadow: 0 0 0 16px rgba(var(--rose-rgb), 0); } }
 
@@ -180,7 +181,7 @@
     right: max(14px, env(safe-area-inset-right, 0px));
     bottom: calc(var(--nav-h) + 12px); // just above the bottom bar
     transition: bottom 0.25s ease, transform 0.2s;
-    &.lift { bottom: calc(var(--nav-h) + 90px); } // above the mini player
+    &.lift { bottom: calc(var(--nav-h) + 86px); } // above the mini player
     .face { width: 34px; height: 34px; }
   }
   .fab.open { display: none; }

@@ -14,7 +14,7 @@
   <div class="side">
     <section class="hello">
       <div class="hello-top">
-        <h1>Love songs that <i>never get old.</i></h1>
+        <h1>Love songs that<br><i>never get old.</i></h1>
         <div class="mine">
         <button class="liked-btn new-btn" type="button" aria-label="Latest and trending songs" (click)="ui.latestOpen.set(true)">
           <app-icon name="spark" />
@@ -47,7 +47,7 @@
         </button>
         </div>
       </div>
-      <p>{{ library.language().tagline }}</p>
+      <p>Ad free {{ library.language().industry }}'s greatest hits.</p>
     </section>
     <app-station-chips class="chips-area" />
     <app-song-list class="songs-area" />
@@ -58,7 +58,7 @@
   <app-mini-player class="mini-area" />
 }
 
-<footer>
+<footer [class.with-mini]="showMini()">
   <div>© {{ year }} Cassette.fm. All rights reserved. Songs belong to their respective owners.</div>
   <div class="by">Crafted with <span class="heart">♥</span> by <b class="author">Ekant Shukla</b> in Bengaluru, India</div>
 </footer>

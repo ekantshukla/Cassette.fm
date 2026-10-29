@@ -191,6 +191,12 @@
   .inline { display: inline-block; width: 16px; height: 16px; vertical-align: -3px; color: var(--rose); }
 }
 
+@media (max-width: 600px) {
+  .panel { padding: 6px; }
+  .head { padding: 8px 6px 6px 10px; h2 { font-size: 24px; } }
+  .empty { padding: 18px 12px 20px; b { font-size: 20px; } }
+}
+
 @media (max-width: 480px) {
   // Phones: rows are a little shorter, so 8 still fit
   .list { max-height: calc(58px * 8 + 4px); }

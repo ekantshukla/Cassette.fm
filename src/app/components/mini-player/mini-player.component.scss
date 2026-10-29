@@ -1,9 +1,11 @@
 :host {
+  // Always pinned just above the bottom bar (like other music apps), never floating mid-page
   display: block;
-  position: sticky;
-  bottom: calc(10px + max(var(--nav-h), env(safe-area-inset-bottom, 0px)));
+  position: fixed;
+  left: max(10px, env(safe-area-inset-left, 0px));
+  right: max(10px, env(safe-area-inset-right, 0px));
+  bottom: calc(8px + max(var(--nav-h), env(safe-area-inset-bottom, 0px)));
   z-index: 30;
-  margin: 0 max(10px, env(safe-area-inset-right, 0px)) 14px max(10px, env(safe-area-inset-left, 0px));
 }
 
 .mini {

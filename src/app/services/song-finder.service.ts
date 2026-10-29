@@ -50,23 +50,68 @@ export class SongFinderService {
     return this.pick(docs.map(d => d.identifier), request, 'name');
   }
 
+  /**
+   * Cassette AI's "Play here": tries harder than find(), in any language, and stops at the first hit.
+   *  1. the normal lookup (film album, then Hindi uploads by name) for Hindi songs
+   *  2. albums titled after the film, in the song's own language
+   *  3. jukebox / "all songs" / full-album uploads of the film
+   *  4. the song's name with common spelling variants (Deewana / Diwana / Divana), any upload
+   *  5. the song's name together with a singer's name
+   * Every candidate must still pass the strict name match (and singer check), and clips, previews,
+   * ringtones and karaoke are skipped, so a hit is the full song.
+   */
+  async findAnywhere(request: SongRequest & { language?: string }): Promise<Song | null> {
+    const language = normalize(request.language || 'hindi');
+    const skip = unwantedFor(language);
+    const hindi = !language || language === 'hindi';
+    if (hindi) {
+      const found = await this.find(request).catch(() => null);
+      if (found) return found;
+    }
+
+    const langWords = hindi ? 'hindi OR bollywood' : `${language}`;
+    const tries: Array<[string, 'film' | 'name']> = [];
+    if (request.film) {
+      const film = request.film.replace(/["\\]/g, '');
+      tries.push([`title:("${film}") AND (${langWords} OR soundtrack OR ost OR movie OR film OR songs)`, 'film']);
+      tries.push([`"${film}" AND (jukebox OR "full album" OR "all songs" OR "audio songs" OR "video songs")`, 'film']);
+    }
+    const name = nameQuery(request.title);
+    if (name) {
+      tries.push([`title:(${name})`, 'name']);
+      const singer = [...singerWords(request.artist)][0];
+      if (singer) tries.push([`(${name}) AND creator:(${singer}*)`, 'name']);
+    }
+
+    for (const [query, via] of tries) {
+      const docs = await this.search(query, skip).catch(() => []);
+      const ids = via === 'film' && request.film
+        ? docs.filter(d => normalize(`${firstValue(d.title)}`).includes(normalize(request.film!).split(' ')[0])).map(d => d.identifier)
+        : docs.map(d => d.identifier);
+      const found = await this.pick(ids, request, via, skip);
+      if (found) return found;
+    }
+    return null;
+  }
+
   /** Opens the top albums and returns the best-matching song, or null if none is close enough. */
-  private async pick(ids: string[], request: SongRequest, via: 'film' | 'name'): Promise<Song | null> {
+  private async pick(ids: string[], request: SongRequest, via: 'film' | 'name', skip = UNWANTED): Promise<Song | null> {
     const albums = await Promise.all(ids.slice(0, ALBUMS_TO_TRY).map(id => this.songsOf(id)));
     for (const songs of albums) {
-      const match = bestMatch(songs, request, via);
+      const match = bestMatch(songs, request, via, skip);
       // The match is strict, so it's safe to show the clean hand-written name and singers.
       if (match) return { ...match, title: request.title, artist: request.artist || match.artist };
     }
     return null;
   }
 
-  private search(query: string): Promise<ArchiveDoc[]> {
-    if (!this.searches.has(query)) {
-      this.searches.set(query, this.archive.search(query, 8).then(docs =>
-        (docs ?? []).filter(d => !UNWANTED.test(`${firstValue(d.title)} ${firstValue(d.creator)}`))));
+  private search(query: string, skip = UNWANTED): Promise<ArchiveDoc[]> {
+    const key = `${skip.source}|${query}`;
+    if (!this.searches.has(key)) {
+      this.searches.set(key, this.archive.search(query, 8).then(docs =>
+        (docs ?? []).filter(d => !skip.test(`${firstValue(d.title)} ${firstValue(d.creator)}`))));
     }
-    return this.searches.get(query)!;
+    return this.searches.get(key)!;
   }
 
   private songsOf(itemId: string): Promise<Song[]> {
@@ -76,14 +121,14 @@ export class SongFinderService {
 }
 
 /** The song whose name best matches the request, or null if none is close enough. */
-function bestMatch(songs: Song[], request: SongRequest, via: 'film' | 'name'): Song | null {
+function bestMatch(songs: Song[], request: SongRequest, via: 'film' | 'name', skip = UNWANTED): Song | null {
   const target = keyWords(request.title);
   const singers = singerWords(request.artist);
   let best: Song | null = null;
   let bestScore = 0;
 
   for (const song of songs) {
-    if (UNWANTED.test(`${song.title} ${song.album} ${song.artist}`)) continue;
+    if (skip.test(`${song.title} ${song.album} ${song.artist}`)) continue;
     const candidate = keyWords(song.title);
     const score = similarity(target, candidate, via);
     if (score <= bestScore) continue;
@@ -142,4 +187,26 @@ function keyWords(text: string): string[] {
 function singerWords(artists?: string): Set<string> {
   const common = new Set(['kumar', 'singh', 'and', 'mohd', 'mohammed', 'md', 'with', 'others', 'various', 'chorus']);
   return new Set(keyWords(artists ?? '').filter(w => w.length > 2 && !common.has(w)));
+}
+
+/** Versions to skip; a Bhojpuri request may of course be Bhojpuri. */
+function unwantedFor(language: string): RegExp {
+  return language === 'bhojpuri' ? new RegExp(UNWANTED.source.replace('bhojpuri|', ''), 'i') : UNWANTED;
+}
+
+/**
+ * The song's name as an Archive search that also accepts the usual spellings of each word:
+ * "Dil Deewana" -> (dil) AND (deewana OR diwana OR deevana OR divana)
+ */
+function nameQuery(title: string): string {
+  const words = normalize(title.replace(/\([^)]*\)/g, ' ')).split(' ').filter(w => w.length > 1 && !FILLER.has(w)).slice(0, 6);
+  if (!words.length) return '';
+  return words.map(w => {
+    const forms = new Set([w]);
+    const swap = (from: RegExp, to: string) => [...forms].forEach(f => { if (forms.size < 5) forms.add(f.replace(from, to)); });
+    swap(/ee/g, 'i'); swap(/i/g, 'ee'); swap(/oo/g, 'u'); swap(/w/g, 'v'); swap(/v/g, 'w');
+    swap(/aa/g, 'a'); swap(/z/g, 'j'); swap(/ph/g, 'f');
+    if (/a$/.test(w) && w.length > 3) forms.add(w + 'a');
+    return `(${[...forms].slice(0, 5).join(' OR ')})`;
+  }).join(' AND ');
 }

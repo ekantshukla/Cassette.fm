@@ -182,8 +182,16 @@ footer {
 
 @media (max-width: 600px) {
   .hello h1 { font-size: 30px; }
-  .hello p { margin-top: 8px; font-size: 13.5px; }
+  .hello p { margin-top: 6px; font-size: 13.5px; }
+
+  // Phones: tighter spacing everywhere
+  .layout { gap: 14px; padding-block: 10px 12px; }
+  .side { gap: 12px; }
+  footer { padding: 4px 16px 14px; font-size: 12px; }
 }
+
+/* The mini player is pinned above the bottom bar, so leave room for it at the end of the page */
+footer.with-mini { padding-bottom: 92px; }
 
 @media (max-width: 380px) {
   .hello h1 { font-size: 27px; }

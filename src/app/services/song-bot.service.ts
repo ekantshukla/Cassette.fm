@@ -138,7 +138,10 @@ export class SongBotService {
   private async findPlayable(message: BotMessage): Promise<void> {
     const songs = message.songs ?? [];
     await Promise.all(songs.map(async song => {
-      const found = await this.finder.find({ title: song.title, artist: song.artists || undefined, film: song.film || undefined }).catch(() => null);
+      const found = await this.finder.findAnywhere({
+        title: song.title, artist: song.artists || undefined, film: song.film || undefined,
+        language: song.language || this.library.language().name,
+      }).catch(() => null);
       song.playable = found;
       song.checking = false;
       this.messages.update(list => [...list]); // redraw this answer
