@@ -35,7 +35,7 @@
 .tick { width: 20px; height: 20px; color: var(--rose); }
 .new { display: flex; gap: 8px; padding: 6px 4px 10px; }
 .new input, .find {
-  flex: 1; min-width: 0; padding: 10px 14px; border-radius: 12px; border: 1px solid var(--line); background: rgba(0, 0, 0, 0.25);
+  flex: 1; min-width: 0; padding: 10px 16px; border-radius: var(--r-control); border: 1px solid var(--line); background: rgba(0, 0, 0, 0.25);
 }
 .find { margin: 6px 4px; }
 .pill { padding: 8px 16px; border-radius: 999px; border: 0; background: var(--rose); color: var(--ink-on-rose); font-weight: 600; }

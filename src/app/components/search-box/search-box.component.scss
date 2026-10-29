@@ -195,5 +195,27 @@ input {
   .search-btn app-icon { width: 21px; height: 21px; }
   .field { height: 40px; padding: 0 12px; gap: 8px; }
   .field app-icon { width: 16px; height: 16px; }
-  .results { max-height: 72vh; }
+  // Phones: the results open under the search bar and take at most 68% of the screen height,
+  // scrolling inside with a visible scrollbar. The page behind is dimmed; the bottom bar stays usable.
+  .overlay .results {
+    position: fixed;
+    top: calc(env(safe-area-inset-top, 0px) + 66px);
+    max-height: min(68vh, calc(100vh - 66px - var(--nav-h, 0px) - 16px));
+    max-height: min(68dvh, calc(100dvh - 66px - var(--nav-h, 0px) - 16px));
+    overscroll-behavior: contain;
+    z-index: 2;
+    // Dims the page around the list (the header's blur makes a separate full-screen layer impossible).
+    // Tapping the dimmed page closes search; the bottom bar sits above it and stays usable.
+    box-shadow: 0 24px 60px -16px rgba(0, 0, 0, 0.8), 0 0 0 100vmax rgba(6, 2, 14, 0.62);
+  }
+}
+
+/* A scrollbar you can see (and drag) when the list is long */
+.results {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(var(--blush-rgb), 0.55) transparent;
+
+  &::-webkit-scrollbar { width: 6px; }
+  &::-webkit-scrollbar-thumb { border-radius: 6px; background: rgba(var(--blush-rgb), 0.55); }
+  &::-webkit-scrollbar-track { background: transparent; }
 }

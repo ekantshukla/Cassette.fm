@@ -48,7 +48,7 @@ async function main(): Promise<void> {
     });
     for (const lang of LANGUAGES) {
       await step(`YouTube new ${lang.name}`, async () => {
-        const list = await youtubeNew(ytKey, lang.code, lang.name);
+        const list = await youtubeNew(ytKey, lang.code, lang.code === 'en' ? 'Hollywood movie' : /wood$/.test(lang.industry) ? lang.industry : lang.name);
         if (list.length) file.youtubeNew[lang.code] = list;
         return list.length;
       });
@@ -136,7 +136,7 @@ async function youtubeNew(key: string, code: string, name: string): Promise<Late
   const after = new Date(Date.now() - 30 * 864e5).toISOString();
   const q = new URLSearchParams({
     part: 'snippet', type: 'video', videoCategoryId: '10', regionCode: 'IN', order: 'viewCount', maxResults: '30',
-    publishedAfter: after, q: `${name} song`, relevanceLanguage: code === 'bho' ? 'hi' : code, videoEmbeddable: 'true', key,
+    publishedAfter: after, q: `${name} song`, relevanceLanguage: code.length === 2 ? code : 'hi', videoEmbeddable: 'true', key,
   });
   const res = await fetchJson<YtSearch>(`${YT}/search?${q}`);
   return (res?.items ?? [])

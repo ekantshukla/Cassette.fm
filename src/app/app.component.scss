@@ -157,7 +157,7 @@ footer {
 /* Phones: just a round red heart, no text */
 @media (max-width: 600px) {
   // Latest and Library are in the bottom bar on phones.
-  .liked-btn.new-btn, .liked-btn.lib-btn { display: none; }
+  .liked-btn.new-btn, .liked-btn.lib-btn, .liked-btn.dl-btn { display: none; }
   .mine { margin-top: 0; }
   .liked-btn {
     width: 44px;

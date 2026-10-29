@@ -1,5 +1,6 @@
 import { Station } from '../models/station.model';
 import { CLASSICAL_DRIVE } from './classical-drive';
+import { DJ_BASS_DB, DJ_WORDS } from './dj';
 
 /*
  * ==========================================================================
@@ -20,8 +21,8 @@ import { CLASSICAL_DRIVE } from './classical-drive';
  * ==========================================================================
  */
 
-/** Words that mark an upload as Hindi film music. */
-export const HINDI = '((bollywood OR "hindi film" OR "hindi songs" OR "hindi movie" OR filmi OR hindi) AND NOT bhojpuri)';
+/** Words that mark an upload as Bollywood (Hindi film) music, never another industry's. */
+export const HINDI = '((bollywood OR "hindi film" OR "hindi films" OR "hindi movie" OR "hindi songs" OR filmi OR hindi) AND NOT (bhojpuri OR haryanvi OR tamil OR telugu OR kannada OR malayalam OR marathi OR gujarati OR bengali OR odia OR "dubbed"))';
 
 export const STATIONS: Station[] = [
   // ---- Start here
@@ -80,6 +81,12 @@ export const STATIONS: Station[] = [
     key: 'party', group: 'Moods', name: 'Dance & Party', subtitle: 'Disco deewane', mark: '✦', color: '#FF9F43',
     query: `${HINDI} AND (dance OR disco OR party OR remix)`,
     backupQuery: `"bappi lahiri" OR (disco AND hindi)`,
+  },
+  {
+    key: 'dj', group: 'Moods', name: 'High Bass DJ', subtitle: 'Bollywood DJ remixes with extra bass', mark: 'DJ', color: '#FF2D55',
+    badge: 'Bass boost', bassBoost: DJ_BASS_DB,
+    query: `${HINDI} AND (${DJ_WORDS})`,
+    backupQuery: `(dj OR remix) AND (hindi OR bollywood OR punjabi)`,
   },
 ];
 

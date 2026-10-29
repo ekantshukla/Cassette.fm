@@ -197,6 +197,12 @@
       <p class="hint">Volume boost has a built-in limiter, so it gets louder without crackling.</p>
 
       <label class="toggle">
+        <span><b>Extra bass on DJ playlists</b><small>High Bass DJ playlists add +7 dB of bass on top of your sound while they play.</small></span>
+        <input type="checkbox" role="switch" [checked]="settings.djBass()" (change)="settings.setDjBass($any($event.target).checked)">
+        <i></i>
+      </label>
+
+      <label class="toggle">
         <span><b>8D audio</b><small>The song slowly circles around your head. Put on headphones.</small></span>
         <input type="checkbox" role="switch" [checked]="settings.eightD()" (change)="settings.setEightD($any($event.target).checked)">
         <i></i>

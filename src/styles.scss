@@ -33,6 +33,10 @@
   // Layout
   --gutter: 20px;
   --header-height: 70px;
+  // One shape for every button and text field: fully rounded ("pill"). Round icon buttons stay circles.
+  --r-control: 999px;
+  // Height of one row in a song list (used to show exactly 8 songs before the list scrolls).
+  --song-row: 62px;
   // Phones: height of the bottom bar (Home, Search, Latest, Library, Settings). 0 on wider screens.
   --nav-h: 0px;
 

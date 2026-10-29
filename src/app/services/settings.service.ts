@@ -59,6 +59,7 @@ export const EQ_PRESETS: EqPreset[] = [
   { key: 'classical', name: 'Classical', gains: [0, 0, 0, 0, 0, 0, -2, -2, -2, -3] },
   { key: 'warm', name: 'Old-school warm', gains: [3, 3, 2, 1, 0, -1, -2, -3, -4, -5] },
   { key: 'party', name: 'Party', gains: [6, 5, 3, 0, -1, 0, 2, 3, 4, 4] },
+  { key: 'dj', name: 'DJ bass', gains: [9, 8, 6, 2, -1, 0, 1, 3, 4, 4] },
   { key: 'car', name: 'Long drive', gains: [5, 4, 2, 0, 0, 1, 2, 2, 3, 3] },
   { key: 'headphones', name: 'Headphones', gains: [4, 3, 1, 0, -1, 0, 1, 2, 3, 2] },
   { key: 'speaker', name: 'Phone speaker', gains: [-6, -4, 0, 3, 3, 2, 2, 2, 1, 0] },
@@ -103,6 +104,8 @@ export interface SavedSettings {
   space: SpaceKey;
   speed: number;
   myPresets: MySoundPreset[];
+  /** Add extra bass automatically while a High Bass DJ playlist plays */
+  djBass: boolean;
   evenLoudness: boolean;
   fadeSeconds: number;
   wifiOnly: boolean;
@@ -112,7 +115,7 @@ export interface SavedSettings {
 const KEY = 'cfm.settings';
 const DEFAULTS: SavedSettings = {
   accent: 'rose', sky: 'dusk', lights: true,
-  eqPreset: 'flat', eqGains: FLAT, bass: 0, treble: 0, boost: 0, width: 100, balance: 0, eightD: false, space: 'off', speed: 1, myPresets: [],
+  eqPreset: 'flat', eqGains: FLAT, bass: 0, treble: 0, boost: 0, width: 100, balance: 0, eightD: false, space: 'off', speed: 1, myPresets: [], djBass: true,
   evenLoudness: false, fadeSeconds: 0,
   wifiOnly: true, autoDownloadLiked: false,
 };
@@ -153,6 +156,7 @@ export class SettingsService {
   readonly space = computed(() => this.saved().space);
   readonly speed = computed(() => this.saved().speed);
   readonly myPresets = computed(() => this.saved().myPresets);
+  readonly djBass = computed(() => this.saved().djBass);
   /** Any sound effect is on, so sound goes through Web Audio. (Speed doesn't need it.) */
   readonly needsAudioEffects = computed(() => {
     const s = this.saved();
@@ -185,6 +189,7 @@ export class SettingsService {
   setEightD(on: boolean): void { this.update({ eightD: on }); }
   setSpace(key: SpaceKey): void { this.update({ space: key }); }
   setSpeed(speed: number): void { this.update({ speed }); }
+  setDjBass(on: boolean): void { this.update({ djBass: on }); }
 
   /** Saves the current equaliser + bass + treble under a name (shown with the presets). */
   saveMyPreset(name: string): void {

@@ -14,7 +14,7 @@ export const SPOTIFY_API = 'https://api.spotify.com/v1';
 /** Spotify genres used to find each language's new songs (the "genre:" search filter). */
 export const SPOTIFY_GENRES: Record<string, string[]> = {
   hi: ['filmi', 'modern bollywood', 'desi pop'],
-  en: ['pop', 'dance pop'],
+  en: ['soundtrack', 'movie tunes'],
   ta: ['tamil pop', 'kollywood'],
   te: ['telugu pop', 'tollywood'],
   kn: ['kannada pop', 'sandalwood'],
@@ -26,6 +26,14 @@ export const SPOTIFY_GENRES: Record<string, string[]> = {
   or: ['odia pop'],
   as: ['assamese pop'],
   bho: ['bhojpuri pop'],
+  hry: ['haryanvi pop', 'haryanvi hip hop'],
+  raj: ['rajasthani pop', 'rajasthani folk'],
+  gbm: ['garhwali pop'],
+  kfy: ['kumaoni pop'],
+  kok: ['konkani pop'],
+  tcy: ['tulu pop'],
+  mai: ['maithili pop'],
+  doi: ['dogri pop'],
 };
 
 export interface SpotifyTrackObject {

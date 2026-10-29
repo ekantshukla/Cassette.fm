@@ -7,22 +7,27 @@
         <b>Music language</b>
         <span>Playlists switch to this language. Your liked songs stay.</span>
       </div>
-      <button class="icon-btn small close" type="button" aria-label="Close" (click)="close()">
+      <button class="close" type="button" aria-label="Close language list" (click)="close()">
         <app-icon name="close" />
       </button>
     </div>
 
+    <div class="list">
+    @for (section of sections; track section.name) {
+    <div class="section">{{ section.name }}</div>
     <div class="grid">
-      @for (language of languages; track language.code) {
+      @for (language of section.languages; track language.code) {
         @let isOn = language.code === library.language().code;
         <button class="lang" type="button" [class.on]="isOn" [attr.aria-pressed]="isOn" (click)="pick(language)">
           <span class="native" [attr.lang]="language.code">{{ language.native }}</span>
-          <span class="name">{{ language.name }}</span>
+          <span class="name">{{ language.name }} · {{ language.industry }}</span>
           @if (isOn) {
             <app-icon name="check" class="tick" />
           }
         </button>
       }
+    </div>
+    }
     </div>
   </div>
 }

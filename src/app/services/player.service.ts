@@ -15,6 +15,8 @@ import { ToastService } from './toast.service';
 const KEY_VOLUME = 'osfm.vol';
 /** Show "Tuning in…" only if a song takes longer than this to start. */
 const TUNING_DELAY_MS = 1500;
+/** A song that hasn't started after this long is treated as broken and skipped. */
+const STALL_MS = 20000;
 /** Stop skipping after this many songs fail in a row (probably no internet). */
 const MAX_SKIPS = 6;
 /** What was playing, so a refresh can carry on from the same song and second. */
@@ -78,6 +80,8 @@ export class PlayerService {
   private readonly queueKey = signal('');
   readonly queueStation = computed(() => this.library.findStation(this.queueKey()));
   readonly progress = computed(() => (this.duration() ? this.currentTime() / this.duration() : 0));
+  /** Extra bass (dB) for the playlist that's playing: High Bass DJ playlists, unless switched off in Settings. */
+  readonly djExtraBass = computed(() => (this.settings.djBass() ? (this.queueStation()?.bassBoost ?? 0) : 0));
 
   /** Playlist that should start as soon as its first songs arrive. */
   private readonly pendingStart = signal<string | null>(null);
@@ -87,6 +91,7 @@ export class PlayerService {
   private skips = 0;
   private wantPlay = false;
   private tuningTimer?: ReturnType<typeof setTimeout>;
+  private stallTimer?: ReturnType<typeof setTimeout>;
   /** Second to jump to once a restored song is ready. */
   private resumeAt = 0;
   /** This song's play was already counted. */
@@ -177,11 +182,16 @@ export class PlayerService {
       const on = this.settings.evenLoudness();
       if (this.fx.active()) this.fx.setLevelling(on);
     });
+    // High Bass DJ playlists: switch the effects on so the extra bass can be added.
+    effect(() => {
+      if (this.djExtraBass() > 0) untracked(() => this.enableEffects());
+    });
     effect(() => {
       const s = this.settings;
       const [bass, treble, boost, width, balance, eightD, space] = [s.bass(), s.treble(), s.boost(), s.width(), s.balance(), s.eightD(), s.space()];
+      const extra = this.djExtraBass();
       if (!this.fx.active()) return;
-      this.fx.setBass(bass);
+      this.fx.setBass(Math.min(12, bass + extra));
       this.fx.setTreble(treble);
       this.fx.setBoost(boost);
       this.fx.setWidth(width);
@@ -201,7 +211,10 @@ export class PlayerService {
 
   /** Opens a playlist and plays it from the top (or a random song with shuffle on). */
   playStation(station: Station): void {
-    this.library.select(station);
+    // The playing playlist keeps loading even if the listener looks at another one.
+    this.library.keepLoading.clear();
+    this.library.keepLoading.add(station.key);
+    this.library.refresh(station);
     this.queueKey.set(station.key);
     this.history = [];
     this.started.set(true);
@@ -407,7 +420,7 @@ export class PlayerService {
 
   private listenToAudio(): void {
     const a = this.audio;
-    a.addEventListener('playing', () => { this.skips = 0; this.wantPlay = false; this.isPlaying.set(true); this.setTuning(false); });
+    a.addEventListener('playing', () => { clearTimeout(this.stallTimer); this.skips = 0; this.wantPlay = false; this.isPlaying.set(true); this.setTuning(false); });
     a.addEventListener('play', () => this.isPlaying.set(true));
     // Changing songs fires "pause" too, so keep "Tuning in…" up while a song is wanted.
     a.addEventListener('pause', () => { this.isPlaying.set(false); if (!this.wantPlay) this.setTuning(false); this.save(); });
@@ -573,6 +586,12 @@ export class PlayerService {
     this.wantPlay = true;
     clearTimeout(this.tuningTimer);
     this.tuningTimer = setTimeout(() => { if (this.wantPlay) this.setTuning(true); }, TUNING_DELAY_MS);
+    // Some archive.org links never answer and never fail either: don't wait forever, try the next song.
+    clearTimeout(this.stallTimer);
+    const token = this.loadToken;
+    this.stallTimer = setTimeout(() => {
+      if (this.wantPlay && token === this.loadToken && this.native.online() && this.audio.readyState < 3) this.onSongError();
+    }, STALL_MS);
   }
 
   private setTuning(on: boolean): void {

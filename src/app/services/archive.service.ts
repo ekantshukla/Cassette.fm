@@ -32,6 +32,12 @@ const MAX_SONGS_PER_ITEM = 40;
 
 /** Tries per request before giving up (archive.org sometimes answers slowly or says "too many requests"). */
 const ATTEMPTS = 3;
+/** A request that hasn't answered after this long is cancelled and tried again (it used to hang forever). */
+const TIMEOUT_MS = 12000;
+/** At most this many archive.org requests at once. More than that and archive.org starts refusing them. */
+const MAX_PARALLEL = 6;
+/** Albums looked up recently are remembered, so switching back to a playlist is instant. */
+const ALBUM_MEMORY = 400;
 
 /**
  * Talks to the Internet Archive (archive.org). No API key needed.
@@ -44,6 +50,13 @@ export class ArchiveService {
   private readonly baseUrl = 'https://archive.org';
   /** Album covers saved on the phone with downloaded songs (album ID → local image). */
   private readonly localCovers = signal<Record<string, string>>({});
+  /** Requests waiting for a free slot, and how many are running. */
+  private readonly waiting: Array<() => void> = [];
+  private running = 0;
+  /** Same URL asked twice at once: both get the one answer. */
+  private readonly inFlight = new Map<string, Promise<unknown>>();
+  /** Songs of albums already opened (album ID → songs). */
+  private readonly albums = new Map<string, Song[]>();
 
   /** Albums matching `query`, or null if archive.org couldn't be reached. */
   async search(query: string, rows = 36, page = 1): Promise<ArchiveDoc[] | null> {
@@ -67,6 +80,17 @@ export class ArchiveService {
 
   /** Playable songs in one album, in track order. Empty if the album is gone or restricted. */
   async getSongs(itemId: string): Promise<Song[]> {
+    const known = this.albums.get(itemId);
+    if (known) return known;
+    const songs = await this.readSongs(itemId);
+    if (songs.length) {
+      if (this.albums.size >= ALBUM_MEMORY) this.albums.delete(this.albums.keys().next().value!);
+      this.albums.set(itemId, songs);
+    }
+    return songs;
+  }
+
+  private async readSongs(itemId: string): Promise<Song[]> {
     try {
       const res = await this.getJson<ArchiveMetadataResponse>(`${this.baseUrl}/metadata/${encodeURIComponent(itemId)}`);
       if (!res || !Array.isArray(res.files) || res.is_dark) return [];
@@ -140,19 +164,50 @@ export class ArchiveService {
     });
   }
 
-  /** GET a JSON URL, retrying on network errors, "too many requests" and server errors. Null if it never works. */
-  private async getJson<T>(url: string): Promise<T | null> {
+  /**
+   * GET a JSON URL: at most MAX_PARALLEL at once, each with a time limit, retrying on network errors,
+   * time-outs, "too many requests" (waiting as long as archive.org asks) and server errors.
+   * Null if it never works.
+   */
+  private getJson<T>(url: string): Promise<T | null> {
+    const same = this.inFlight.get(url);
+    if (same) return same as Promise<T | null>;
+    const job = this.fetchJson<T>(url).finally(() => this.inFlight.delete(url));
+    this.inFlight.set(url, job);
+    return job;
+  }
+
+  private async fetchJson<T>(url: string): Promise<T | null> {
     for (let attempt = 1; attempt <= ATTEMPTS; attempt++) {
+      let wait = 800 * attempt;
+      await this.slot();
+      const abort = new AbortController();
+      const timer = setTimeout(() => abort.abort(), TIMEOUT_MS);
       try {
-        const res = await fetch(url);
+        const res = await fetch(url, { signal: abort.signal });
         if (res.ok) return (await res.json()) as T;
         if (res.status !== 429 && res.status < 500) return null; // e.g. 404: retrying won't help
+        const after = Number(res.headers.get('Retry-After'));
+        if (after > 0) wait = Math.min(after * 1000, 10000);
       } catch {
-        /* network error: retry */
+        /* network error or time-out: retry */
+      } finally {
+        clearTimeout(timer);
+        this.release();
       }
-      if (attempt < ATTEMPTS) await new Promise(done => setTimeout(done, 800 * attempt));
+      if (attempt < ATTEMPTS) await new Promise(done => setTimeout(done, wait));
     }
     return null;
+  }
+
+  private slot(): Promise<void> {
+    if (this.running < MAX_PARALLEL) { this.running++; return Promise.resolve(); }
+    return new Promise(resolve => this.waiting.push(() => { this.running++; resolve(); }));
+  }
+
+  private release(): void {
+    this.running--;
+    this.waiting.shift()?.();
   }
 
   /** Title and artist from the file's tags, falling back to its file name. */

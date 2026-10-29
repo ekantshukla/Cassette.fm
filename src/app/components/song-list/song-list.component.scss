@@ -52,14 +52,22 @@
 .list {
   list-style: none;
   margin: 0;
-  padding: 0;
-  max-height: min(62vh, 640px);
+  padding: 0 4px 0 0;
+  // Exactly 8 songs show; longer lists scroll inside with a visible scrollbar. At the top or bottom
+  // of the list the page itself carries on scrolling, so a thumb never gets stuck in here.
+  max-height: calc(var(--song-row) * 8 + 4px);
   overflow-y: auto;
+  overscroll-behavior-y: auto;
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+  scrollbar-color: rgba(var(--blush-rgb), 0.55) transparent;
+
+  &::-webkit-scrollbar { width: 6px; }
+  &::-webkit-scrollbar-thumb { border-radius: 6px; background: rgba(var(--blush-rgb), 0.55); }
+  &::-webkit-scrollbar-track { background: transparent; }
 }
 
 .row {
+  min-height: var(--song-row);
   display: grid;
   grid-template-columns: 22px 48px minmax(0, 1fr) 36px 40px 36px;
   position: relative;
@@ -183,8 +191,10 @@
   .inline { display: inline-block; width: 16px; height: 16px; vertical-align: -3px; color: var(--rose); }
 }
 
-@media (max-width: 900px) {
-  .list { max-height: none; }
+@media (max-width: 480px) {
+  // Phones: rows are a little shorter, so 8 still fit
+  .list { max-height: calc(58px * 8 + 4px); }
+  .row { min-height: 58px; }
 }
 
 @media (max-width: 480px) {

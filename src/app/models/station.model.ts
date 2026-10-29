@@ -25,6 +25,12 @@ export interface Station {
   /** A hand-picked list of songs, played in this order (e.g. Nostalgic Long Drive) */
   songList?: SongRequest[];
 
+  /**
+   * High Bass DJ playlists: extra bass (dB) added on top of the listener's own sound while it plays
+   * (Settings → Sound → "Extra bass on DJ playlists" turns this off).
+   */
+  bassBoost?: number;
+
   /** "Everything" playlists: keep loading more from the whole Archive with "Load more songs" */
   endless?: boolean;
 

@@ -20,7 +20,7 @@ const KEY_LIKED = 'osfm.v4.liked';
 const KEY_STATION = 'osfm.station';
 const KEY_LANGUAGE = 'osfm.lang';
 /** Bump when the cached song format changes, so old caches are ignored. */
-const CACHE_VERSION = 6;
+const CACHE_VERSION = 7;
 
 interface CachedStation {
   version: number;
@@ -37,7 +37,7 @@ interface CachedStation {
 const PREBUILT_URL = 'playlists.json';
 export interface PrebuiltPlaylists { version?: number; generatedAt: string; playlists: Record<string, Song[]>; }
 /** Bump when the rules for what may appear in playlists change, so older lists are never reused. */
-export const PLAYLISTS_VERSION = 2;
+export const PLAYLISTS_VERSION = 3; // 3: every language fetches only its own film industry
 
 /** Hand-picked songs looked up at the same time. Higher = faster, but more load on archive.org. */
 const SONG_LOOKUPS_AT_ONCE = 8;
@@ -107,8 +107,25 @@ export class LibraryService {
   setLanguage(language: Language): void {
     this.language.set(language);
     this.storage.set(KEY_LANGUAGE, language.code);
-    this.select(this.stations()[0]);
+    this.refresh(this.stations()[0]);
   }
+
+  /**
+   * Opens a playlist and makes sure its songs are really there: one that came back empty, or that is
+   * stuck loading for over 25 seconds, is looked up again. (Changing language used to show an empty list.)
+   */
+  refresh(station: Station): void {
+    const key = station.key;
+    const stuck = this.loadingByStation()[key] === true && Date.now() - (this.loadStarted.get(key) ?? 0) > 25000;
+    if (!isLocalStation(station) && !this.songsFor(key).length && (stuck || this.loadingByStation()[key] === false)) {
+      this.loadingByStation.update(map => { const next = { ...map }; delete next[key]; return next; });
+      this.stoppedKeys.delete(key);
+    }
+    this.select(station);
+  }
+
+  /** When each playlist's current lookup started. */
+  private readonly loadStarted = new Map<string, number>();
 
   songsFor(key: string): Song[] {
     if (key === LIKED_STATION.key) return this.liked();
@@ -189,7 +206,12 @@ export class LibraryService {
    * Safe to call repeatedly.
    */
   async load(station: Station): Promise<void> {
-    if (isLocalStation(station) || this.loadingByStation()[station.key] !== undefined) return;
+    if (isLocalStation(station)) return;
+    const state = this.loadingByStation()[station.key];
+    if (state === true) return; // already loading
+    // Already loaded with songs: nothing to do. Finished with NO songs (archive.org was down, the
+    // internet dropped): try again, instead of showing "couldn't find songs" until the app restarts.
+    if (state === false && this.songsFor(station.key).length) return;
 
     if (!station.isTemporary) {
       this.setLoading(station.key, true);
@@ -206,13 +228,20 @@ export class LibraryService {
       this.setSongs(station.key, cached.songs);
       // A hand-picked list that was only partly looked up last time: carry on from there.
       if (station.songList && cached.resumeAt !== undefined) {
+        this.stoppedKeys.delete(station.key);
         this.setLoading(station.key, true);
-        await this.addFromSongList(station, station.songList, cached.resumeAt, cached.songs);
+        await this.addFromSongList(station, station.songList, this.cache[station.key]?.resumeAt ?? cached.resumeAt, this.songsFor(station.key));
+        if (this.stopped(station)) {
+          this.loadingByStation.update(map => { const next = { ...map }; delete next[station.key]; return next; });
+          return;
+        }
       }
       this.setLoading(station.key, false);
       return;
     }
 
+    this.stoppedKeys.delete(station.key);
+    this.loadStarted.set(station.key, Date.now());
     this.setSongs(station.key, []);
     this.setLoading(station.key, true);
 
@@ -224,6 +253,9 @@ export class LibraryService {
     const addFromItems = async (itemIds: string[]) => {
       const todo = itemIds.filter(id => !itemsDone.has(id));
       for (let i = 0; i < todo.length && songs.length < MAX_SONGS; i += 4) {
+        // The listener moved on to another playlist: stop here, so this one doesn't slow that one down.
+        // (It carries on from scratch next time; albums already opened are remembered, so that's quick.)
+        if (this.abandoned(station, songs)) return;
         const batch = todo.slice(i, i + 4);
         batch.forEach(id => itemsDone.add(id));
         const albums = await Promise.all(batch.map(id => this.archive.getSongs(id)));
@@ -245,11 +277,16 @@ export class LibraryService {
 
     if (station.songList?.length) songs = await this.addFromSongList(station, station.songList, 0, []);
     if (station.items?.length) await addFromItems(station.items);
-    if (station.query) await addFromItems(usableIds(await this.archive.search(station.query)));
-    if (station.backupQuery && songs.length < MIN_SONGS_BEFORE_BACKUP) {
+    if (station.query && !this.stopped(station)) await addFromItems(usableIds(await this.archive.search(station.query)));
+    if (station.backupQuery && songs.length < MIN_SONGS_BEFORE_BACKUP && !this.stopped(station)) {
       await addFromItems(usableIds(await this.archive.search(station.backupQuery)));
     }
 
+    if (this.stopped(station)) {
+      // Left half-way: forget the loading state, so opening it again loads the rest.
+      this.loadingByStation.update(map => { const next = { ...map }; delete next[station.key]; return next; });
+      return;
+    }
     this.setLoading(station.key, false);
     // Hand-picked lists save as they go (see addFromSongList).
     if (songs.length && !station.isTemporary && !station.songList) this.writeCache(station.key, songs);
@@ -297,12 +334,39 @@ export class LibraryService {
 
   // ---- private helpers ----------------------------------------------------
 
+  /** Stations whose loading was stopped because the listener switched away. */
+  private readonly stoppedKeys = new Set<string>();
+
+  /**
+   * True when this station is no longer the one on screen (and already has some songs to play,
+   * or none were needed). Only in the browser/app: the build script loads every playlist in full.
+   */
+  private abandoned(station: Station, songs: Song[]): boolean {
+    if (typeof document === 'undefined' || station.isTemporary) return false;
+    if (this.selectedKey() === station.key || this.keepLoading.has(station.key)) return false;
+    this.stoppedKeys.add(station.key);
+    return true;
+  }
+
+  private stopped(station: Station): boolean {
+    if (!this.stoppedKeys.has(station.key)) return false;
+    if (this.selectedKey() === station.key) { this.stoppedKeys.delete(station.key); return false; }
+    return true;
+  }
+
+  /** Stations to finish loading even when not on screen (the one that's playing). Set by the player. */
+  readonly keepLoading = new Set<string>();
+
   /** Fetches playlists.json once. Null when it's missing (e.g. `npm start` before running `npm run playlists`). */
   private loadPrebuilt(): Promise<Record<string, Song[]> | null> {
     if (!this.prebuilt) {
       this.prebuilt = typeof document === 'undefined'
         ? Promise.resolve(null) // running in the build script itself
-        : this.fetchPrebuilt();
+        : this.fetchPrebuilt().then(list => {
+          // Couldn't get it (e.g. no internet at start-up): ask again on a later playlist, not never.
+          if (!list) setTimeout(() => { this.prebuilt = undefined; }, 30000);
+          return list;
+        });
     }
     return this.prebuilt;
   }
@@ -338,6 +402,7 @@ export class LibraryService {
     const total = requests.length;
 
     for (let i = start; i < total; i += SONG_LOOKUPS_AT_ONCE) {
+      if (this.abandoned(station, songs)) return songs; // progress is saved: it carries on from here next time
       this.setProgress(station.key, i, total);
       const found = await Promise.all(requests.slice(i, i + SONG_LOOKUPS_AT_ONCE).map(r => this.finder.find(r)));
       const fresh = found.filter((s): s is Song => !!s && !seen.has(songKey(s)));

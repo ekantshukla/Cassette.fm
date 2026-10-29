@@ -14,7 +14,7 @@
 
 .bar {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   height: var(--nav-h);
   padding: 4px max(6px, env(safe-area-inset-right, 0px)) env(safe-area-inset-bottom, 0px) max(6px, env(safe-area-inset-left, 0px));
   background: linear-gradient(180deg, rgba(14, 7, 26, 0.86), rgba(10, 4, 20, 0.98));
@@ -24,6 +24,7 @@
 }
 
 button {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -39,7 +40,20 @@ button {
   transition: color 0.15s;
 
   app-icon { width: 23px; height: 23px; }
-  span { white-space: nowrap; }
+  span { max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   &.on { color: var(--text); app-icon { color: var(--rose); } }
   &:active app-icon { transform: scale(0.9); }
+}
+
+.n {
+  position: absolute;
+  top: 4px;
+  left: calc(50% + 6px);
+  min-width: 17px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--rose);
+  color: var(--ink-on-rose);
+  font: 700 10px/16px var(--mono);
+  font-style: normal;
 }

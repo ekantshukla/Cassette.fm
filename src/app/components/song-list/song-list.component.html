@@ -46,7 +46,7 @@
             <app-icon name="more" />
           </button>
           @if (menuFor() === songKey(song)) {
-            <div class="row-menu" role="menu" [class.up]="i > 2 && i > songs().length - 4" (click)="$event.stopPropagation()" (keydown.enter)="$event.stopPropagation()">
+            <div class="row-menu" role="menu" [class.up]="menuUp()" (click)="$event.stopPropagation()" (keydown.enter)="$event.stopPropagation()">
               <button type="button" role="menuitem" (click)="addOne(song)"><app-icon name="plus" /> Add to playlist</button>
               <button type="button" role="menuitem" (click)="toggleLike($event, song); menuFor.set(null)">
                 <app-icon [name]="liked ? 'heart-filled' : 'heart'" /> {{ liked ? 'Remove from Liked' : 'Save to Liked' }}

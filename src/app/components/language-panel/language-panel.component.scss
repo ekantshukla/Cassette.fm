@@ -35,7 +35,40 @@
 
   b { display: block; font-family: var(--serif); font-weight: 400; font-size: 24px; line-height: 1.1; }
   span { display: block; margin-top: 4px; font-size: 12px; color: var(--muted); }
-  .close { margin: -6px -6px 0 0; }
+  // A clear, round close button that's easy to hit with a thumb
+  .close {
+    flex: none;
+    width: 38px;
+    height: 38px;
+    margin: -4px -4px 0 0;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    border: 1px solid var(--line);
+    background: var(--glass-2);
+    color: var(--text);
+    app-icon { width: 18px; height: 18px; }
+    &:hover { background: rgba(255, 255, 255, 0.18); }
+  }
+}
+
+/* The panel: title + close stay put, the languages scroll underneath with a visible scrollbar */
+.panel { display: flex; flex-direction: column; max-height: min(78vh, 720px); }
+.head { flex: none; }
+.list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  margin-right: -8px;
+  padding-right: 8px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(var(--blush-rgb), 0.55) transparent;
+
+  &::-webkit-scrollbar { width: 6px; }
+  &::-webkit-scrollbar-thumb { border-radius: 6px; background: rgba(var(--blush-rgb), 0.55); }
+  &::-webkit-scrollbar-track { background: transparent; }
+  .section:first-child { margin-top: 2px; }
 }
 
 .grid {
@@ -79,8 +112,8 @@
     right: 0;
     bottom: 0;
     width: auto;
-    max-height: 80vh;
-    overflow-y: auto;
+    max-height: min(72vh, calc(100vh - var(--nav-h, 0px) - 70px));
+    max-height: min(72dvh, calc(100dvh - var(--nav-h, 0px) - 70px));
     padding: 18px max(16px, env(safe-area-inset-right, 0px)) calc(18px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
     border-radius: 24px 24px 0 0;
     animation: rise 0.22s ease-out;
@@ -92,4 +125,13 @@
 @media (max-width: 600px) {
   .scrim { bottom: var(--nav-h); }
   .panel { bottom: var(--nav-h); }
+}
+
+.section {
+  margin: 14px 2px 8px;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--blush);
 }

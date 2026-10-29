@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 
 import { LANGUAGES, Language } from '../../data/languages';
+import { PlayerService } from '../../services/player.service';
 import { LibraryService } from '../../services/library.service';
 import { ToastService } from '../../services/toast.service';
 import { UiService } from '../../services/ui.service';
@@ -23,17 +24,32 @@ export class LanguagePanelComponent {
   protected readonly library = inject(LibraryService);
   protected readonly ui = inject(UiService);
   private readonly toast = inject(ToastService);
+  private readonly player = inject(PlayerService);
 
-  protected readonly languages = LANGUAGES;
+  protected readonly sections = [
+    { name: 'Popular', languages: LANGUAGES.filter(l => !l.regional) },
+    { name: 'Regional', languages: LANGUAGES.filter(l => l.regional) },
+  ];
 
   protected close(): void {
     this.ui.languageOpen.set(false);
   }
 
+  /**
+   * Picking a language (even the same one again) always refreshes: the playlists switch to that
+   * language, its first playlist opens and loads, and if music was playing it carries on in the new language.
+   */
   protected pick(language: Language): void {
     this.close();
-    if (language.code === this.library.language().code) return;
-    this.library.setLanguage(language);
-    this.toast.show(`Now showing ${language.name} playlists`);
+    const same = language.code === this.library.language().code;
+    if (!same) this.library.setLanguage(language);
+    const first = this.library.stations()[0];
+    if (this.player.isPlaying() || this.player.isTuning()) {
+      this.player.playStation(same ? this.library.selected() : first);
+    } else {
+      this.library.refresh(same ? this.library.selected() : first);
+    }
+    this.toast.show(same ? `Refreshing ${language.name} playlists` : `Now playing ${language.name} playlists`);
+    setTimeout(() => document.querySelector('app-song-list')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
   }
 }

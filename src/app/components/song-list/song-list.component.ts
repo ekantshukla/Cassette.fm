@@ -44,8 +44,17 @@ export class SongListComponent {
   protected readonly finished = computed(() => this.library.isFinished(this.station().key));
   protected readonly heading = computed(() => (this.station().isLiked ? 'Liked songs' : this.station().name));
 
+  /** The ⋯ menu opens upwards when its song sits in the lower half of the 8-song box (so it isn't cut off). */
+  protected readonly menuUp = signal(false);
+
   protected toggleMenu(event: Event, song: Song): void {
     event.stopPropagation();
+    const row = (event.target as HTMLElement).closest<HTMLElement>('.row');
+    const list = row?.closest<HTMLElement>('.list');
+    if (row && list) {
+      const top = row.getBoundingClientRect().top - list.getBoundingClientRect().top;
+      this.menuUp.set(top > list.clientHeight / 2);
+    }
     this.menuFor.set(this.menuFor() === songKey(song) ? null : songKey(song));
   }
 
@@ -101,9 +110,15 @@ export class SongListComponent {
     // Keep the playing song in view on desktop.
     effect(() => {
       if (!this.player.current()) return;
+      // Keep the playing song visible inside the 8-song box (scrolls the box only, never the page).
       setTimeout(() => {
-        if (window.innerWidth <= 900) return;
-        this.host.nativeElement.querySelector('.row.current')?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        const list = this.host.nativeElement.querySelector<HTMLElement>('.list');
+        const row = list?.querySelector<HTMLElement>('.row.current');
+        if (!list || !row) return;
+        const top = row.offsetTop - list.offsetTop;
+        if (top < list.scrollTop || top + row.offsetHeight > list.scrollTop + list.clientHeight) {
+          list.scrollTo({ top: Math.max(0, top - list.clientHeight / 2 + row.offsetHeight / 2), behavior: 'smooth' });
+        }
       });
     });
   }

@@ -1,4 +1,9 @@
-<!-- Phones: no button here; Search in the bottom bar opens the field over the header -->
+<!-- Phones: a search button at the top until tapped -->
+@if (isPhone() && !expanded()) {
+  <button class="search-btn" type="button" aria-label="Search songs" (click)="expand()">
+    <app-icon name="search" />
+  </button>
+}
 
 <!-- Desktop: always a search field. Phones: the field covers the header once the button is tapped. -->
 @if (!isPhone() || expanded()) {
