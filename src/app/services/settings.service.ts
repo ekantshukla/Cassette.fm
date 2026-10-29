@@ -117,7 +117,7 @@ const DEFAULTS: SavedSettings = {
   accent: 'rose', sky: 'dusk', lights: true,
   eqPreset: 'flat', eqGains: FLAT, bass: 0, treble: 0, boost: 0, width: 100, balance: 0, eightD: false, space: 'off', speed: 1, myPresets: [], djBass: true,
   evenLoudness: false, fadeSeconds: 0,
-  wifiOnly: true, autoDownloadLiked: false,
+  wifiOnly: false, autoDownloadLiked: false,
 };
 
 @Injectable({ providedIn: 'root' })

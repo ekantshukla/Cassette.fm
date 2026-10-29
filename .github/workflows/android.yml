@@ -55,6 +55,9 @@ jobs:
         run: |
           sed -i "s|^export const GITHUB_REPO = .*|export const GITHUB_REPO = '${{ github.repository }}';|" src/app/data/app-info.ts
           sed -i "s|^export const APP_VERSION = .*|export const APP_VERSION = '${VERSION_NAME}';|" src/app/data/app-info.ts
+          if [ -n "${{ vars.SONG_BOT_URL }}" ]; then
+            sed -i "s|^export const SONG_BOT_URL = .*|export const SONG_BOT_URL = '${{ vars.SONG_BOT_URL }}';|" src/app/data/app-info.ts
+          fi
           if [ -n "${{ vars.SPOTIFY_CLIENT_ID }}" ]; then
             sed -i "s|^export const SPOTIFY_CLIENT_ID = .*|export const SPOTIFY_CLIENT_ID = '${{ vars.SPOTIFY_CLIENT_ID }}';|" src/app/data/spotify-config.ts
           fi

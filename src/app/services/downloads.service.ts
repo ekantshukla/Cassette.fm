@@ -97,10 +97,7 @@ export class DownloadsService {
       if (!quiet) this.toast.show("You're offline. Connect to the internet to download.");
       return 0;
     }
-    if (this.native.isApp && this.settings.wifiOnly() && !this.native.wifi()) {
-      if (!quiet) this.toast.show('Downloads are set to Wi-Fi only. Change it in Settings.', 3200);
-      return 0;
-    }
+    // Downloads work on any internet: Wi-Fi or mobile data.
     const active = this.active();
     const fresh = songs.filter((s, i, all) => {
       const key = songKey(s);

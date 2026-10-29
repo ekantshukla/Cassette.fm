@@ -8,6 +8,7 @@ import { ArchiveService } from '../../services/archive.service';
 import { LibraryService, SongMatch } from '../../services/library.service';
 import { PlayerService } from '../../services/player.service';
 import { ToastService } from '../../services/toast.service';
+import { SongBotService } from '../../services/song-bot.service';
 import { UiService } from '../../services/ui.service';
 import { VoiceSearchService } from '../../services/voice-search.service';
 import { cleanName, firstValue, highlight, normalize } from '../../utils/text.utils';
@@ -38,6 +39,14 @@ export class SearchBoxComponent {
   protected readonly voice = inject(VoiceSearchService);
   private readonly toast = inject(ToastService);
   private readonly ui = inject(UiService);
+  private readonly bot = inject(SongBotService);
+
+  /** Hands what was typed to the AI song finder. */
+  protected askAi(): void {
+    const question = this.text().trim();
+    this.close(true);
+    this.bot.start(question);
+  }
   private readonly input = viewChild<ElementRef<HTMLInputElement>>('input');
 
   protected readonly text = signal('');

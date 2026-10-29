@@ -1,0 +1,195 @@
+:host { display: contents; }
+
+/* ---- Floating button (bottom-right, above the bottom bar and the mini player on phones) ---- */
+.fab {
+  position: fixed;
+  z-index: 48;
+  right: max(18px, env(safe-area-inset-right, 0px));
+  bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+  width: 60px; height: 60px;
+  display: grid; place-items: center;
+  border: 0; border-radius: 50%;
+  background: linear-gradient(135deg, var(--rose), rgb(var(--glow-rgb)));
+  color: #fff;
+  box-shadow: 0 14px 34px -10px rgba(var(--rose-rgb), 0.75), 0 0 0 1px rgba(255, 255, 255, 0.18) inset;
+  transition: transform 0.2s, box-shadow 0.2s;
+
+  &:hover { transform: translateY(-2px) scale(1.04); }
+  &:active { transform: scale(0.95); }
+  .face { width: 38px; height: 38px; color: #fff4f7; }
+  app-icon { width: 24px; height: 24px; }
+  &::after { // a soft pulse so it's noticed, until it's used
+    content: ''; position: absolute; inset: 0; border-radius: 50%;
+    box-shadow: 0 0 0 0 rgba(var(--rose-rgb), 0.55);
+    animation: pulse 2.4s ease-out infinite;
+  }
+  &.open::after { animation: none; }
+}
+@keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(var(--rose-rgb), 0.55); } 70%, 100% { box-shadow: 0 0 0 16px rgba(var(--rose-rgb), 0); } }
+
+.hello {
+  position: absolute; right: calc(100% + 10px); top: 50%; transform: translateY(-50%);
+  padding: 8px 12px; border-radius: 14px 14px 4px 14px;
+  background: var(--surface); border: 1px solid var(--line);
+  color: var(--text); font-size: 12.5px; font-weight: 500; white-space: nowrap;
+  box-shadow: 0 12px 30px -10px rgba(0, 0, 0, 0.7);
+  animation: hello-in 0.4s 1.2s both ease-out;
+}
+@keyframes hello-in { from { opacity: 0; transform: translate(8px, -50%); } }
+
+.scrim {
+  position: fixed; inset: 0; z-index: 44;
+  background: rgba(5, 2, 12, 0.6); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px);
+  opacity: 0; visibility: hidden; transition: opacity 0.25s, visibility 0.25s;
+  &.open { opacity: 1; visibility: visible; }
+}
+
+/* Desktop: a floating chat window above the button. Phones: full screen above the bottom bar. */
+.bot {
+  position: fixed; z-index: 47;
+  right: max(18px, env(safe-area-inset-right, 0px));
+  bottom: calc(92px + env(safe-area-inset-bottom, 0px));
+  width: min(420px, calc(100vw - 36px));
+  height: min(640px, calc(100vh - 130px));
+  display: flex; flex-direction: column;
+  border-radius: 24px;
+  box-shadow: 0 30px 80px -20px rgba(0, 0, 0, 0.85);
+  overflow: hidden;
+  background:
+    radial-gradient(120% 45% at 100% 0%, rgba(var(--glow-rgb), 0.3), transparent 60%),
+    radial-gradient(90% 40% at 0% 100%, rgba(var(--rose-rgb), 0.2), transparent 60%),
+    var(--surface);
+  border: 1px solid var(--line);
+  transform-origin: 100% 100%;
+  transform: translateY(16px) scale(0.92);
+  opacity: 0; visibility: hidden;
+  transition: transform 0.25s cubic-bezier(0.3, 0.7, 0.3, 1), opacity 0.2s, visibility 0.2s;
+  &.open { transform: none; opacity: 1; visibility: visible; }
+}
+
+.head {
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px 12px 10px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  > div { flex: 1; min-width: 0; }
+  h2 { margin: 0; font-family: var(--serif); font-weight: 400; font-size: 28px; line-height: 1.05; }
+  small { color: var(--muted); font-size: 12px; }
+  .spark {
+    width: 40px; height: 40px; flex: none; display: grid; place-items: center; border-radius: 50%;
+    background: linear-gradient(135deg, var(--rose), rgba(var(--glow-rgb), 1)); color: #fff4f7;
+    svg { width: 30px; height: 30px; }
+  }
+  .dot { display: inline-block; width: 7px; height: 7px; margin-right: 4px; border-radius: 50%; background: #35d49a; vertical-align: 1px; }
+  h2 { font-size: 24px; }
+  .link { border: 0; background: none; color: var(--muted); font-size: 12px; text-decoration: underline; }
+}
+
+.video {
+  margin: 0 14px 8px; border-radius: 16px; overflow: hidden; background: #000;
+  iframe { display: block; width: 100%; aspect-ratio: 16 / 9; border: 0; }
+  .stop { width: 100%; padding: 8px; border: 0; background: var(--surface-glass); color: var(--muted); font-size: 12px; }
+}
+
+.chat {
+  flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain;
+  display: flex; flex-direction: column; gap: 10px;
+  padding: 6px 14px 14px;
+  scrollbar-width: thin; scrollbar-color: rgba(var(--blush-rgb), 0.55) transparent;
+  &::-webkit-scrollbar { width: 6px; }
+  &::-webkit-scrollbar-thumb { border-radius: 6px; background: rgba(var(--blush-rgb), 0.55); }
+}
+
+.intro {
+  p { margin: 6px 4px 12px; color: var(--muted); line-height: 1.5; }
+  .note { font-size: 12px; color: var(--gold); }
+}
+.examples { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip {
+  padding: 8px 14px; border-radius: var(--r-control, 999px); border: 1px solid var(--line);
+  background: var(--glass); font-size: 13px; text-align: left;
+  &:hover { background: var(--glass-2); }
+}
+
+.msg { max-width: 92%; padding: 10px 14px; border-radius: 18px; line-height: 1.45; font-size: 14px; }
+.msg.me { align-self: flex-end; background: linear-gradient(135deg, var(--rose), var(--rose-2)); color: var(--ink-on-rose); border-bottom-right-radius: 6px; }
+.msg.ai { align-self: flex-start; width: 100%; background: var(--glass); border: 1px solid var(--line); border-bottom-left-radius: 6px; p { margin: 0 0 6px; } }
+.msg.err { border-color: rgba(255, 215, 163, 0.5); }
+
+.song {
+  margin-top: 8px; padding: 10px 12px; border-radius: 14px; background: rgba(0, 0, 0, 0.22);
+  .what { b { display: block; font-weight: 600; } span { font-size: 12.5px; color: var(--muted); } }
+}
+.ways { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; &:empty { display: none; } }
+.pill, .ghost {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 14px 7px 10px; border-radius: var(--r-control, 999px); font-size: 13px; font-weight: 600;
+  app-icon { width: 15px; height: 15px; }
+}
+.pill { border: 0; background: var(--rose); color: var(--ink-on-rose); }
+.ghost { border: 1px solid var(--line); background: var(--glass); color: var(--text); }
+.looking { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted); }
+.spinner {
+  width: 12px; height: 12px; border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.25); border-top-color: var(--rose); animation: spin 0.8s linear infinite;
+}
+.free {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 8px;
+  > span { font-size: 11px; color: var(--faint); margin-right: 2px; }
+}
+.svc {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 4px 10px; border-radius: var(--r-control, 999px); border: 1px solid var(--line); background: none;
+  font-size: 12px; color: var(--muted);
+  app-icon { width: 12px; height: 12px; }
+  &:hover { color: var(--text); background: var(--glass-2); }
+}
+
+.typing {
+  display: inline-flex; gap: 4px; width: auto !important; padding: 12px 16px;
+  i { width: 7px; height: 7px; border-radius: 50%; background: var(--blush); animation: blink 1.2s infinite; }
+  i:nth-child(2) { animation-delay: 0.2s; } i:nth-child(3) { animation-delay: 0.4s; }
+}
+@keyframes blink { 0%, 80%, 100% { opacity: 0.25; } 40% { opacity: 1; } }
+
+.ask {
+  display: flex; align-items: center; gap: 6px;
+  margin: 0 14px; padding: 4px 4px 4px 16px;
+  border-radius: var(--r-control, 999px); border: 1px solid var(--line); background: rgba(0, 0, 0, 0.28);
+  &:focus-within { border-color: rgba(var(--blush-rgb), 0.6); }
+  input { flex: 1; min-width: 0; height: 42px; border: 0; outline: 0; background: none; color: var(--text); font-size: 16px; }
+  .mic.on { color: var(--rose); }
+  .send {
+    width: 40px; height: 40px; flex: none; display: grid; place-items: center; border: 0; border-radius: 50%;
+    background: var(--rose); color: var(--ink-on-rose);
+    app-icon { width: 18px; height: 18px; }
+    &:disabled { opacity: 0.45; }
+  }
+}
+.legal { margin: 8px 18px calc(12px + env(safe-area-inset-bottom, 0px)); font-size: 11px; color: var(--faint); text-align: center; }
+
+/* Desktop: the page stays usable around the window, so no dimming */
+@media (min-width: 601px) {
+  .scrim { display: none; }
+}
+
+/* Phones: the button sits above the bottom bar (and the mini player); the chat fills the screen above the bar */
+@media (max-width: 600px) {
+  .fab { width: 54px; height: 54px; bottom: calc(var(--nav-h) + 84px); right: max(14px, env(safe-area-inset-right, 0px)); .face { width: 34px; height: 34px; } }
+  .fab.open { display: none; }
+  .scrim { bottom: var(--nav-h); }
+  .bot {
+    right: 0; left: 0; top: 0; bottom: var(--nav-h);
+    width: auto; height: auto; border-radius: 0; border: 0;
+    transform-origin: 50% 100%;
+  }
+  .head { padding-top: calc(12px + env(safe-area-inset-top, 0px)); }
+  .head .close { display: grid; }
+  .legal { margin-bottom: 10px; }
+}
+
+/* the bot blinks now and then, and its antenna light glows */
+.face .eyes, .spark .eyes { transform-box: fill-box; transform-origin: center; animation: blink 4.5s infinite; }
+.face .bulb, .spark .bulb { animation: glow 1.8s ease-in-out infinite alternate; }
+@keyframes blink { 0%, 92%, 100% { transform: scaleY(1); } 95% { transform: scaleY(0.1); } }
+@keyframes glow { from { opacity: 0.55; } to { opacity: 1; filter: drop-shadow(0 0 2px #ffd7a3); } }
+@media (prefers-reduced-motion: reduce) { .face .eyes, .spark .eyes, .face .bulb, .spark .bulb { animation: none; } }

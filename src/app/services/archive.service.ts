@@ -27,6 +27,11 @@ const EXCLUDE_QUERY = `NOT (${BLOCKED.join(' OR ')})`;
 const EXCLUDE_NAME = new RegExp(`\\b(${BLOCKED.map(w => w.replace(/"/g, '')).join('|')}|qur'?an)\\b`, 'i');
 /** Arabic/Urdu script: none of the site's languages use it, so titles in it are never a match. */
 const ARABIC_SCRIPT = /[\u0600-\u06FF\u0750-\u077F]/;
+/**
+ * File names that aren't one real song: "Track 02", "Audio 3", "01", ringtones, jukeboxes, medleys.
+ * (The deeper check, wrong language / covers / re-sung copies, is the AI check in scripts/ai-filter.ts.)
+ */
+const JUNK_TITLE = /^\s*(track|audio|song|untitled|file|recording|new recording)?\s*[-_ ]*\d*\s*$|\b(ringtone|jukebox|medley|non ?stop|nonstop|full album|audio book)\b/i;
 /** Most songs taken from a single album, so one album can't fill a playlist. */
 const MAX_SONGS_PER_ITEM = 40;
 
@@ -120,7 +125,9 @@ export class ArchiveService {
         if (seen.has(base)) continue;
         seen.add(base);
 
-        songs.push({ ...this.describe(file, albumArtist, album), itemId, file: file.name, album, track: parseInt(file.track ?? '', 10) || 999 });
+        const described = this.describe(file, albumArtist, album);
+        if (JUNK_TITLE.test(described.title)) continue;
+        songs.push({ ...described, itemId, file: file.name, album, track: parseInt(file.track ?? '', 10) || 999 });
       }
 
       return songs

@@ -38,3 +38,19 @@
 @media (max-width: 900px) {
   :host { display: none; }
 }
+
+
+@media (min-width: 901px) and (min-height: 620px) {
+  .chips { gap: 6px; align-items: center; }
+  .group {
+    flex-basis: auto;
+    margin: 0 2px 0 12px;
+    &:first-child { margin-left: 0; }
+  }
+  .chip { padding: 7px 14px; font-size: 13px; }
+}
+
+/* Big screens get roomier buttons again */
+@media (min-width: 1600px) and (min-height: 900px) {
+  .chip { padding: 9px 18px; font-size: 14px; }
+}

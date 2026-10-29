@@ -228,3 +228,14 @@
   .volume { margin-top: 8px; }
   .credit { display: none; }
 }
+
+
+@media (min-width: 901px) and (min-height: 620px) {
+  .card { padding: clamp(16px, 2.6vh, 28px) clamp(16px, 1.6vw, 28px) clamp(12px, 2vh, 24px); }
+  .turntable { width: min(300px, 32vh, 80%); }
+  .station { margin-top: clamp(10px, 2vh, 24px); }
+  .title { font-size: clamp(24px, 3.6vh, 34px); }
+  .save { margin-top: clamp(8px, 1.4vh, 14px); }
+  .progress { margin-top: clamp(10px, 2vh, 22px); }
+  .credit { margin-top: clamp(8px, 1.6vh, 18px); padding-top: clamp(8px, 1.2vh, 14px); }
+}

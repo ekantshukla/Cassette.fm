@@ -4,6 +4,8 @@ import { DOWNLOADS_STATION, LIKED_STATION } from './data/stations';
 import { AccountScreenComponent } from './components/account-screen/account-screen.component';
 import { AddToPlaylistComponent } from './components/add-to-playlist/add-to-playlist.component';
 import { BottomNavComponent } from './components/bottom-nav/bottom-nav.component';
+import { SongBotComponent } from './components/song-bot/song-bot.component';
+import { SongBotService } from './services/song-bot.service';
 import { LatestPanelComponent } from './components/latest-panel/latest-panel.component';
 import { BokehBackgroundComponent } from './components/bokeh-background/bokeh-background.component';
 import { HeaderComponent } from './components/header/header.component';
@@ -30,7 +32,7 @@ import { UiService } from './services/ui.service';
 @Component({
   selector: 'app-root',
   imports: [
-    AccountScreenComponent, AddToPlaylistComponent, BottomNavComponent, LatestPanelComponent, BokehBackgroundComponent, HeaderComponent, IconComponent, LanguagePanelComponent, MiniPlayerComponent, PlayerCardComponent, PlaylistDrawerComponent,
+    AccountScreenComponent, AddToPlaylistComponent, BottomNavComponent, SongBotComponent, LatestPanelComponent, BokehBackgroundComponent, HeaderComponent, IconComponent, LanguagePanelComponent, MiniPlayerComponent, PlayerCardComponent, PlaylistDrawerComponent,
     SettingsPanelComponent, SongListComponent, StationChipsComponent, ToastComponent, TuningPopupComponent,
   ],
   templateUrl: './app.component.html',
@@ -47,6 +49,7 @@ export class AppComponent {
   private readonly settings = inject(SettingsService);
   protected readonly ui = inject(UiService);
   private readonly toast = inject(ToastService);
+  protected readonly bot = inject(SongBotService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly playerCard = viewChild.required(PlayerCardComponent, { read: ElementRef });
 
@@ -62,7 +65,7 @@ export class AppComponent {
 
     // Settings → "Download liked songs": save every liked song (quietly, when allowed).
     effect(() => {
-      if (!this.settings.autoDownloadLiked() || !this.native.online() || (this.native.isApp && this.settings.wifiOnly() && !this.native.wifi())) return;
+            if (!this.settings.autoDownloadLiked() || !this.native.online()) return; // any internet: Wi-Fi or mobile data
       const liked = this.library.liked();
       untracked(() => this.downloads.download(liked, true));
     });
@@ -86,6 +89,7 @@ export class AppComponent {
       }
       if (this.ui.addToPlaylist()) { this.ui.addToPlaylist.set(null); return true; }
       if (this.ui.searchOpen()) { this.ui.searchOpen.set(false); return true; }
+      if (this.bot.open()) { this.bot.open.set(false); return true; }
       if (this.settings.open()) { this.settings.open.set(false); return true; }
       if (this.ui.languageOpen()) { this.ui.languageOpen.set(false); return true; }
       if (this.ui.latestOpen()) { this.ui.latestOpen.set(false); return true; }

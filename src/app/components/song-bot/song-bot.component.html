@@ -1,0 +1,122 @@
+<!-- Floating Cassette AI button: bottom-right on every screen -->
+<button class="fab" type="button" [class.open]="bot.open()" [attr.aria-label]="bot.open() ? 'Close Cassette AI' : 'Open Cassette AI: find any song'"
+        [attr.aria-expanded]="bot.open()" (click)="toggle()">
+  @if (bot.open()) {
+    <app-icon name="close" />
+  } @else {
+    <svg class="face" viewBox="0 0 48 48" aria-hidden="true">
+      <line x1="24" y1="13" x2="24" y2="6.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" />
+      <circle class="bulb" cx="24" cy="5" r="3" fill="#ffd7a3" />
+      <rect x="1.5" y="20" width="4.5" height="10" rx="2" fill="currentColor" opacity=".85" />
+      <rect x="42" y="20" width="4.5" height="10" rx="2" fill="currentColor" opacity=".85" />
+      <rect x="5" y="13" width="38" height="27" rx="7" fill="currentColor" />
+      <rect x="9.5" y="17.5" width="29" height="13" rx="4" fill="#2a0e1c" />
+      <g class="eyes"><ellipse cx="17.5" cy="24" rx="3.4" ry="3.4" fill="#ffd7a3" /><ellipse cx="30.5" cy="24" rx="3.4" ry="3.4" fill="#ffd7a3" /></g>
+      <path d="M19 34.5q5 3 10 0" fill="none" stroke="#2a0e1c" stroke-width="2" stroke-linecap="round" opacity=".7" />
+    </svg>
+    @if (!seen()) { <span class="hello">Can't find a song? Ask me</span> }
+  }
+</button>
+
+<div class="scrim" [class.open]="bot.open()" (click)="close()"></div>
+
+<section class="bot" role="dialog" aria-label="Cassette AI: find a song" [class.open]="bot.open()"
+         [attr.aria-hidden]="!bot.open()" [attr.inert]="bot.open() ? null : ''">
+  <div class="head">
+    <span class="spark">
+      <svg viewBox="0 0 48 48" aria-hidden="true">
+      <line x1="24" y1="13" x2="24" y2="6.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" />
+      <circle class="bulb" cx="24" cy="5" r="3" fill="#ffd7a3" />
+      <rect x="1.5" y="20" width="4.5" height="10" rx="2" fill="currentColor" opacity=".85" />
+      <rect x="42" y="20" width="4.5" height="10" rx="2" fill="currentColor" opacity=".85" />
+      <rect x="5" y="13" width="38" height="27" rx="7" fill="currentColor" />
+      <rect x="9.5" y="17.5" width="29" height="13" rx="4" fill="#2a0e1c" />
+      <g class="eyes"><ellipse cx="17.5" cy="24" rx="3.4" ry="3.4" fill="#ffd7a3" /><ellipse cx="30.5" cy="24" rx="3.4" ry="3.4" fill="#ffd7a3" /></g>
+      <path d="M19 34.5q5 3 10 0" fill="none" stroke="#2a0e1c" stroke-width="2" stroke-linecap="round" opacity=".7" />
+    </svg>
+    </span>
+    <div>
+      <h2>Cassette AI</h2>
+      <small><i class="dot"></i> Finds any song, however you remember it</small>
+    </div>
+    @if (bot.messages().length) {
+      <button class="link" type="button" (click)="bot.clear()">New chat</button>
+    }
+    <button class="icon-btn close" type="button" aria-label="Close" (click)="close()"><app-icon name="close" /></button>
+  </div>
+
+  @if (video(); as v) {
+    <div class="video">
+      <iframe [src]="v.url" [title]="v.title" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen
+              referrerpolicy="strict-origin-when-cross-origin"></iframe>
+      <button class="stop" type="button" (click)="video.set(null)">Stop video</button>
+    </div>
+  }
+
+  <div class="chat">
+    @if (!bot.messages().length) {
+      <div class="intro">
+        <p>Can't find a song? Tell me the film, the singer, the actors, a scene, or a few words you remember. I'll find it and show you where to play it.</p>
+        <div class="examples">
+          @for (e of examples; track e) {
+            <button class="chip" type="button" (click)="bot.ask(e)">{{ e }}</button>
+          }
+        </div>
+        @if (!bot.aiAvailable) {
+          <p class="note">The AI isn't switched on yet (see SONG-BOT.md), so I'll search by song name for now.</p>
+        }
+      </div>
+    }
+
+    @for (m of bot.messages(); track $index) {
+      @if (m.role === 'user') {
+        <div class="msg me">{{ m.text }}</div>
+      } @else {
+        <div class="msg ai" [class.err]="m.error">
+          <p>{{ m.text }}</p>
+          @for (s of m.songs ?? []; track $index) {
+            <div class="song">
+              <div class="what">
+                <b>{{ s.title }}</b>
+                <span>{{ details(s) }}</span>
+              </div>
+              <div class="ways">
+                @if (s.checking) {
+                  <span class="looking"><i class="spinner"></i> Looking on the Archive…</span>
+                } @else if (s.playable) {
+                  <button class="pill" type="button" (click)="play(m, s)"><app-icon name="play" /> Play here</button>
+                }
+                @if (s.youtubeId) {
+                  <button class="ghost" type="button" (click)="watch(s)"><app-icon name="play" /> Watch video here</button>
+                }
+              </div>
+              <div class="free">
+                <span>Listen free on</span>
+                @for (svc of services; track svc.name) {
+                  <button class="svc" type="button" (click)="openService(link(svc, s))">{{ svc.name }} <app-icon name="external" /></button>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      }
+    }
+    @if (bot.busy()) {
+      <div class="msg ai typing"><i></i><i></i><i></i></div>
+    }
+  </div>
+
+  <form class="ask" (submit)="$event.preventDefault(); send()">
+    <input type="text" placeholder="e.g. the song from DDLJ at the train station" aria-label="Describe the song"
+           [value]="draft()" (input)="draft.set(value($event))" maxlength="500" enterkeyhint="send">
+    @if (voice.supported()) {
+      <button class="icon-btn mic" type="button" [class.on]="voice.listening()" [attr.aria-label]="voice.listening() ? 'Stop listening' : 'Say it'" (click)="speak()">
+        <app-icon name="mic" />
+      </button>
+    }
+    <button class="send" type="submit" [disabled]="bot.busy() || !draft().trim()" aria-label="Ask">
+      <app-icon name="next" />
+    </button>
+  </form>
+  <p class="legal">AI can make mistakes. Songs play from the Internet Archive or the official YouTube video; other links open those apps.</p>
+</section>

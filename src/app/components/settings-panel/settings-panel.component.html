@@ -266,13 +266,7 @@
         <button class="pill" type="button" (click)="openDownloads()">Open</button>
       </div>
 
-      @if (native.isApp) {
-        <label class="toggle">
-          <span><b>Download on Wi-Fi only</b><small>Saves your mobile data. Turn off to download on mobile data too.</small></span>
-          <input type="checkbox" role="switch" [checked]="settings.wifiOnly()" (change)="settings.setWifiOnly($any($event.target).checked)">
-          <i></i>
-        </label>
-      }
+      <p class="hint">Downloads work on Wi-Fi and on mobile data.</p>
       <label class="toggle">
         <span><b>Download liked songs</b><small>Every song you ♥ is saved for offline automatically.</small></span>
         <input type="checkbox" role="switch" [checked]="settings.autoDownloadLiked()" (change)="settings.setAutoDownloadLiked($any($event.target).checked)">

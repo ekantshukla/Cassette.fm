@@ -18,6 +18,12 @@ export const ACCOUNTS_ENABLED = false;
  * Empty = the website uses demo accounts saved in the browser.
  */
 export const FIREBASE_WEB_CONFIG = '';
+/**
+ * Cassette AI song finder: the address of your Cloudflare Worker (worker/song-bot.js, see SONG-BOT.md),
+ * e.g. 'https://cassette-song-bot.yourname.workers.dev'. Filled in by the workflows from the repository
+ * variable SONG_BOT_URL. Empty = the chat still searches the Archive and offers free links, without AI.
+ */
+export const SONG_BOT_URL = '';
 /** Sign in with a phone number + OTP. Off: each OTP text costs money on Firebase (see ACCOUNTS.md). */
 export const PHONE_SIGN_IN = false;
 /** true = the app can't be used without an account (like Spotify). false = "Not now" is allowed. */

@@ -15,6 +15,8 @@ An Angular app that streams audio straight from the [Internet Archive](https://a
   stadium), speed 0.75–1.5×, save your own presets.
 - **Latest & Trending:** new songs per language and India's charts. See **[LATEST.md](LATEST.md)**.
 - **Spotify** (optional, max 5 users): see **[SPOTIFY.md](SPOTIFY.md)**.
+- **Cassette AI**, the floating song-finder bot: describe a song any way you remember it; play it here, watch the official video here, or open it free elsewhere. See **[SONG-BOT.md](SONG-BOT.md)**.
+- **AI song check** (optional): Claude keeps only genuine original songs of each language's industry. See **[AI-FILTER.md](AI-FILTER.md)**.
 - **Accounts everywhere:** with Firebase (ACCOUNTS.md) they're real; without it, sign up / log in / phone OTP
   work as **demo accounts saved on the device** (demo OTP `123456`). Accounts now also keep your playlists.
 

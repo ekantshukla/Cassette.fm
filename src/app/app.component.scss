@@ -111,6 +111,8 @@
 
   &.dl-btn app-icon { color: var(--rose); }
   &.lib-btn app-icon { color: var(--blush); }
+  &.ai-btn { border-color: rgba(var(--glow-rgb), 0.6); background: linear-gradient(120deg, rgba(var(--glow-rgb), 0.28), rgba(var(--rose-rgb), 0.16)); }
+  &.ai-btn app-icon { color: #fff; }
   &.new-btn { border-color: rgba(var(--rose-rgb), 0.55); background: linear-gradient(120deg, rgba(var(--rose-rgb), 0.28), rgba(var(--glow-rgb), 0.22)); }
   &.new-btn app-icon { color: var(--gold); }
   &.dl-btn[aria-pressed='true'] { border-color: rgba(var(--rose-rgb), 0.6); background: rgba(var(--rose-rgb), 0.16); }
@@ -142,7 +144,7 @@ footer {
 
   a { color: inherit; }
   .by { color: var(--muted); }
-  .by .heart { color: var(--rose); }
+  .by .heart { color: #ff2d4a; }
 }
 
 @media (max-width: 900px) {
@@ -173,4 +175,65 @@ footer {
 @media (max-width: 480px) {
   .hello h1 { font-size: 36px; }
   .hello p { font-size: 14px; }
+}
+
+
+/* ==========================================================================
+   Desktop and laptop screens: everything fits in one screen, like a music app.
+   Header on top, footer line at the bottom, the player on the left, and on the
+   right the headline, playlists and songs. Only the song list scrolls.
+   (Short windows, under 620px tall, keep the normal scrolling page.)
+   ========================================================================== */
+@media (min-width: 901px) and (min-height: 620px) {
+  :host {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    height: 100dvh;
+    overflow: hidden;
+  }
+
+  .layout {
+    flex: 1;
+    min-height: 0;
+    width: 100%;
+    grid-template-columns: clamp(320px, 26vw, 460px) minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
+    gap: clamp(24px, 3vw, 56px);
+    align-items: stretch;
+    padding-block: clamp(10px, 2vh, 24px);
+  }
+
+  .player-area {
+    position: static;
+    min-height: 0;
+    overflow-y: auto;
+    scrollbar-width: none;
+    &::-webkit-scrollbar { display: none; }
+  }
+
+  .side {
+    min-height: 0;
+    gap: clamp(10px, 1.8vh, 18px);
+  }
+
+  .hello {
+    margin: 0;
+    h1 { font-size: clamp(34px, min(4.4vw, 7.5vh), 76px); }
+    p { margin-top: clamp(6px, 1.2vh, 14px); font-size: clamp(14px, 1.9vh, 17px); }
+  }
+
+  .songs-area {
+    flex: 1;
+    min-height: 240px;
+  }
+
+  footer {
+    flex: none;
+    flex-direction: row;
+    justify-content: center;
+    gap: 14px;
+    padding: 6px 16px 10px;
+    font-size: 12px;
+  }
 }

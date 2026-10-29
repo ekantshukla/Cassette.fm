@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 
 import { LANGUAGES, Language } from '../../data/languages';
+import { isLocalStation } from '../../models/station.model';
 import { PlayerService } from '../../services/player.service';
 import { LibraryService } from '../../services/library.service';
 import { ToastService } from '../../services/toast.service';
@@ -44,10 +45,13 @@ export class LanguagePanelComponent {
     const same = language.code === this.library.language().code;
     if (!same) this.library.setLanguage(language);
     const first = this.library.stations()[0];
+    // Downloads, Liked and your own playlists aren't tied to a language: go to the language's playlists.
+    const current = this.library.selected();
+    const target = same && !isLocalStation(current) ? current : first;
     if (this.player.isPlaying() || this.player.isTuning()) {
-      this.player.playStation(same ? this.library.selected() : first);
+      this.player.playStation(target);
     } else {
-      this.library.refresh(same ? this.library.selected() : first);
+      this.library.refresh(target);
     }
     this.toast.show(same ? `Refreshing ${language.name} playlists` : `Now playing ${language.name} playlists`);
     setTimeout(() => document.querySelector('app-song-list')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);

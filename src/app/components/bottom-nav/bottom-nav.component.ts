@@ -1,6 +1,7 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
 
 import { DOWNLOADS_STATION } from '../../data/stations';
+import { isLocalStation } from '../../models/station.model';
 import { DownloadsService } from '../../services/downloads.service';
 import { LibraryService } from '../../services/library.service';
 import { PlayerService } from '../../services/player.service';
@@ -53,9 +54,21 @@ export class BottomNavComponent {
     if (this.ui.menuOpen()) return 'library';
     if (this.ui.latestOpen()) return 'latest';
     if (this.ui.languageOpen()) return 'language';
-    if (this.library.selected().isDownloads) return 'downloads';
-    return 'home';
+    return this.base();
   });
+
+  /**
+   * The tab you tapped when no panel is open: Home, or Offline while your downloads list shows.
+   * Not saved, so the app always starts on Home.
+   */
+  private readonly base = signal<'home' | 'downloads'>('home');
+
+  constructor() {
+    // Opening any other playlist (a language, a playlist button, search…) goes back to Home.
+    effect(() => {
+      if (!this.library.selected().isDownloads) this.base.set('home');
+    });
+  }
 
   protected go(tab: Tab): void {
     const again = this.active() === tab;
@@ -66,8 +79,18 @@ export class BottomNavComponent {
     this.ui.languageOpen.set(false);
     this.ui.searchOpen.set(false);
 
-    if (tab === 'home') { window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
+    if (tab === 'home') {
+      // Home = your language's playlists. Leaving Downloads / Liked / your own playlists goes to the
+      // language's first playlist; a language playlist stays and is reloaded if it came up empty.
+      // Music that's already playing keeps playing.
+      this.base.set('home');
+      const current = this.library.selected();
+      this.library.refresh(isLocalStation(current) ? this.library.stations()[0] : current);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
     if (tab === 'downloads') {
+      this.base.set('downloads');
       this.player.playStation(DOWNLOADS_STATION);
       setTimeout(() => document.querySelector('app-song-list')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
       return;

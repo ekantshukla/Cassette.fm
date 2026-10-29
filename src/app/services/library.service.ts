@@ -35,7 +35,13 @@ interface CachedStation {
  * Loading this one small file is what makes playlists open instantly.
  */
 const PREBUILT_URL = 'playlists.json';
-export interface PrebuiltPlaylists { version?: number; generatedAt: string; playlists: Record<string, Song[]>; }
+export interface PrebuiltPlaylists {
+  version?: number;
+  generatedAt: string;
+  playlists: Record<string, Song[]>;
+  /** The AI song check's remembered answers (scripts/ai-filter.ts). Not used by the app itself. */
+  verdicts?: Record<string, 0 | 1>;
+}
 /** Bump when the rules for what may appear in playlists change, so older lists are never reused. */
 export const PLAYLISTS_VERSION = 3; // 3: every language fetches only its own film industry
 
@@ -101,6 +107,18 @@ export class LibraryService {
     if (key.startsWith(SMART_PREFIX)) return this.collections.smartStations.find(s => s.key === key);
     // Look in every language, so a song saved from another language still resumes after a refresh.
     return this.stations().find(s => s.key === key) ?? ALL_STATIONS.find(s => s.key === key);
+  }
+
+  /**
+   * Shows a ready-made list (e.g. songs the AI found) as a temporary playlist, without looking anything up.
+   * Never saved to the menu.
+   */
+  showSongs(station: Station, songs: Song[]): void {
+    const temp: Station = { ...station, isTemporary: true };
+    this.temporaryStation.set(temp);
+    this.setSongs(temp.key, songs);
+    this.setLoading(temp.key, false);
+    this.selectedKey.set(temp.key);
   }
 
   /** Switches the music language and opens its first playlist (playback carries on until the visitor picks a song). */

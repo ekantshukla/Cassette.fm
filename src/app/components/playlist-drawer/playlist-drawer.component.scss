@@ -109,13 +109,12 @@
 }
 
 .filters {
+  // Wrap onto a second line instead of sliding off the edge, with room around each
+  // button so the highlighted one's outline is never cut off.
   display: flex;
+  flex-wrap: wrap;
   gap: 6px;
-  overflow-x: auto;
-  scrollbar-width: none;
-  padding: 4px 0;
-
-  &::-webkit-scrollbar { display: none; }
+  padding: 4px 2px 6px;
 }
 .filter {
   flex: none;
@@ -319,3 +318,5 @@
   .scrim { bottom: var(--nav-h); }
   .drawer, .panel, .latest { bottom: var(--nav-h); }
 }
+
+.latest-card.ai { background: linear-gradient(120deg, rgba(var(--glow-rgb), 0.32), rgba(var(--rose-rgb), 0.16)); border-color: rgba(var(--glow-rgb), 0.55); app-icon { color: #fff; } }

@@ -46,6 +46,11 @@ jobs:
             fs.writeFileSync(f, fs.readFileSync(f, 'utf8').replace(/^export const FIREBASE_WEB_CONFIG = .*$/m, 'export const FIREBASE_WEB_CONFIG = ' + JSON.stringify(json) + ';'));
           "
 
+      # Optional: "Ask AI" song finder (repository VARIABLE SONG_BOT_URL, see SONG-BOT.md).
+      - name: Song finder address
+        if: ${{ vars.SONG_BOT_URL != '' }}
+        run: sed -i "s|^export const SONG_BOT_URL = .*|export const SONG_BOT_URL = '${{ vars.SONG_BOT_URL }}';|" src/app/data/app-info.ts
+
       # Optional: "Connect Spotify" (repository VARIABLE SPOTIFY_CLIENT_ID, see SPOTIFY.md).
       - name: Spotify client ID
         if: ${{ vars.SPOTIFY_CLIENT_ID != '' }}
@@ -56,9 +61,12 @@ jobs:
       - name: Build playlists
         run: npm run playlists
         continue-on-error: true
-        timeout-minutes: 100  # ~190 playlists across 21 languages
+        timeout-minutes: 150  # ~190 playlists across 21 languages (the first AI check takes longest)
         env:
           PREVIOUS_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/playlists.json
+          # Optional AI song check (see AI-FILTER.md). Without the secret, playlists are built as before.
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          AI_MODEL: ${{ vars.AI_MODEL }}
 
       # "Latest & Trending": Apple Music charts always; YouTube and Spotify when their secrets are set (see LATEST.md).
       - name: Build latest songs

@@ -63,8 +63,12 @@
       }
 
       @if (!songHits().length && !albums()?.length && !albumsLoading()) {
-        <div class="message">No match for “{{ text().trim() }}”. Try a film name or singer.</div>
+        <div class="message">No match for “{{ text().trim() }}”.</div>
       }
+      <button class="ask-ai" type="button" (click)="askAi()">
+        <app-icon name="spark" />
+        <span><b>Can't find it? Ask Cassette AI</b><small>Describe the song: film, singer, a scene, a few words</small></span>
+      </button>
     }
   </div>
 }

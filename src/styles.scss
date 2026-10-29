@@ -139,10 +139,15 @@ button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
 
 /* Page width container */
 .wrap {
-  max-width: 1160px;
+  // Grows with the screen: full use of 16" laptops and 27" monitors, without lines getting absurdly long.
+  max-width: min(1720px, 100%);
   margin: 0 auto;
   padding-left: max(var(--gutter), env(safe-area-inset-left, 0px));
   padding-right: max(var(--gutter), env(safe-area-inset-right, 0px));
+}
+
+@media (min-width: 1200px) {
+  :root { --gutter: clamp(24px, 3vw, 64px); }
 }
 
 /* Frosted glass panel */

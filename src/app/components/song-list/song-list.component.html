@@ -39,7 +39,7 @@
           <app-download-button [song]="song" />
           <button class="icon-btn small heart" type="button" aria-label="Like"
                   [class.on]="liked" [attr.aria-pressed]="liked" (click)="toggleLike($event, song)">
-            <app-icon name="heart-filled" />
+            <app-icon [name]="liked ? 'heart-filled' : 'heart'" />
           </button>
           <button class="icon-btn small more" type="button" aria-label="More options for this song"
                   [attr.aria-expanded]="menuFor() === songKey(song)" (click)="toggleMenu($event, song)">

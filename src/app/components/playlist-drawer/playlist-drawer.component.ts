@@ -10,6 +10,7 @@ import { NativeService } from '../../services/native.service';
 import { PlayerService } from '../../services/player.service';
 import { StorageService } from '../../services/storage.service';
 import { ToastService } from '../../services/toast.service';
+import { SongBotService } from '../../services/song-bot.service';
 import { UiService } from '../../services/ui.service';
 import { IconComponent } from '../icon/icon.component';
 
@@ -44,6 +45,7 @@ export class PlaylistDrawerComponent {
   protected readonly downloads = inject(DownloadsService);
   protected readonly native = inject(NativeService);
   protected readonly ui = inject(UiService);
+  protected readonly bot = inject(SongBotService);
   private readonly player = inject(PlayerService);
   private readonly storage = inject(StorageService);
   private readonly toast = inject(ToastService);

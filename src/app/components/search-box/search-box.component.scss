@@ -219,3 +219,15 @@ input {
   &::-webkit-scrollbar-thumb { border-radius: 6px; background: rgba(var(--blush-rgb), 0.55); }
   &::-webkit-scrollbar-track { background: transparent; }
 }
+
+/* "Can't find it? Ask Cassette AI" at the end of the results */
+.ask-ai {
+  display: flex; align-items: center; gap: 12px; width: 100%;
+  margin-top: 6px; padding: 10px 12px; border-radius: 14px; text-align: left;
+  border: 1px solid rgba(var(--glow-rgb), 0.55);
+  background: linear-gradient(120deg, rgba(var(--glow-rgb), 0.22), rgba(var(--rose-rgb), 0.14));
+  color: var(--text);
+  app-icon { width: 22px; height: 22px; flex: none; color: var(--gold); }
+  b { display: block; font-weight: 600; font-size: 14px; }
+  small { display: block; font-size: 12px; color: var(--muted); }
+}
