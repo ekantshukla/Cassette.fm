@@ -8,7 +8,7 @@
   </div>
 }
 
-<main class="wrap layout">
+<main class="wrap layout" [class.offline-view]="!!library.selected().isDownloads">
   <app-player-card class="player-area" />
 
   <div class="side">

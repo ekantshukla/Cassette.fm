@@ -92,7 +92,7 @@ export class BottomNavComponent {
     if (tab === 'downloads') {
       this.base.set('downloads');
       this.player.playStation(DOWNLOADS_STATION);
-      setTimeout(() => document.querySelector('app-song-list')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+      window.scrollTo({ top: 0, behavior: 'smooth' }); // phones show only the downloads list here
       return;
     }
     if (again) return; // tapping the open tab again closes it (back to Home)

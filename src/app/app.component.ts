@@ -57,7 +57,7 @@ export class AppComponent {
   protected readonly year = new Date().getFullYear();
   private readonly playerCardVisible = signal(true);
   /** Phones only (hidden by CSS on wide screens): show once the big player scrolls away. */
-  protected readonly showMini = computed(() => this.player.started() && !this.playerCardVisible());
+  protected readonly showMini = computed(() => this.player.started() && (!this.playerCardVisible() || !!this.library.selected().isDownloads));
 
   constructor() {
     // Load the last-opened playlist so the list isn't empty.
@@ -113,7 +113,7 @@ export class AppComponent {
   /** Opens the songs saved for offline (and plays them, if there are any). */
   protected openDownloads(): void {
     this.player.playStation(DOWNLOADS_STATION);
-    if (window.innerWidth <= 900) document.querySelector('app-song-list')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (window.innerWidth <= 900) window.scrollTo({ top: 0, behavior: 'smooth' }); // the list is all that shows
   }
 
   /** Opens the visitor's liked songs (and plays them, if there are any). */

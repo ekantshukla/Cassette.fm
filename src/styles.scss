@@ -131,7 +131,9 @@ body {
   padding-top: env(safe-area-inset-top, 0px);
   padding-bottom: env(safe-area-inset-bottom, 0px);
   overflow-x: hidden;
+  overflow-x: clip;
 }
+html { overflow-x: hidden; overflow-x: clip; }
 
 button, input { font: inherit; color: inherit; }
 button { cursor: pointer; -webkit-tap-highlight-color: transparent; }

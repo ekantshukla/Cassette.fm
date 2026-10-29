@@ -156,6 +156,14 @@ footer {
   .mini-area { display: block; }
 }
 
+/* Phones and tablets, Offline tab: just the downloads list. The big player steps aside;
+   the mini player at the bottom has play/pause and next. Home brings the full player back. */
+@media (max-width: 900px) {
+  .offline-view {
+    .player-area, .hello, .chips-area { display: none; }
+  }
+}
+
 /* Phones: just a round red heart, no text */
 @media (max-width: 600px) {
   // Latest and Library are in the bottom bar on phones.
@@ -172,9 +180,13 @@ footer {
   }
 }
 
-@media (max-width: 480px) {
-  .hello h1 { font-size: 36px; }
-  .hello p { font-size: 14px; }
+@media (max-width: 600px) {
+  .hello h1 { font-size: 30px; }
+  .hello p { margin-top: 8px; font-size: 13.5px; }
+}
+
+@media (max-width: 380px) {
+  .hello h1 { font-size: 27px; }
 }
 
 

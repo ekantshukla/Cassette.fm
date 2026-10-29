@@ -1,6 +1,6 @@
 <header>
   <div class="wrap bar">
-    <div class="logo">Cassette<i>.fm</i></div>
+    <div class="logo"><svg class="mark" viewBox="16 25 68 50" aria-hidden="true"><defs><linearGradient id="cfm-mark-g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff6f91"/><stop offset="1" stop-color="#ffc48a"/></linearGradient></defs><rect x="18" y="27" width="64" height="46" rx="11" fill="url(#cfm-mark-g)"/><rect x="26" y="35" width="48" height="22" rx="5" fill="#1d1028"/><path d="M33 46h2.5M39 41v10M44.5 38.5v15M50 42v8M55.5 39.5v13M61 43v6M66 46h1" stroke="url(#cfm-mark-g)" stroke-width="3.2" stroke-linecap="round"/><path d="M34 73l5-8h22l5 8" fill="#1d1028" opacity=".35"/></svg><span>Cassette<i>.fm</i></span></div>
 
     <app-search-box class="search" />
 
@@ -20,7 +20,9 @@
           <span class="name">{{ firstName() }}</span>
         </button>
       } @else if (account.ready()) {
-        <button class="login" type="button" (click)="account.screenOpen.set(true)">Log in</button>
+        <button class="login" type="button" aria-label="Log in or create an account" title="Log in" (click)="account.screenOpen.set(true)">
+          <app-icon name="user" />
+        </button>
       }
       <div class="live" [class.on]="player.isPlaying()">
         <b></b><span>{{ liveText() }}</span>

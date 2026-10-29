@@ -5,6 +5,7 @@ import { NativeService } from '../../services/native.service';
 import { PlayerService } from '../../services/player.service';
 import { BotMessage, BotSong, FREE_SERVICES, SongBotService } from '../../services/song-bot.service';
 import { openExternal } from '../../services/spotify.service';
+import { UiService } from '../../services/ui.service';
 import { VoiceSearchService } from '../../services/voice-search.service';
 import { IconComponent } from '../icon/icon.component';
 
@@ -35,6 +36,7 @@ export class SongBotComponent {
   private readonly native = inject(NativeService);
   private readonly player = inject(PlayerService);
   private readonly sanitizer = inject(DomSanitizer);
+  protected readonly ui = inject(UiService);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
 
   protected readonly examples = EXAMPLES;
@@ -44,6 +46,7 @@ export class SongBotComponent {
   protected readonly video = signal<{ id: string; url: SafeResourceUrl; title: string } | null>(null);
 
   constructor() {
+    this.watchMiniPlayer();
     // Keep the newest message in view.
     effect(() => {
       this.bot.messages();
@@ -62,6 +65,27 @@ export class SongBotComponent {
   close(): void {
     if (this.voice.listening()) this.voice.stop();
     this.bot.open.set(false);
+  }
+
+  /** Phones: the button sits just above the bottom bar, and steps up while the mini player is stuck there. */
+  protected readonly lift = signal(false);
+
+  private watchMiniPlayer(): void {
+    if (typeof window === 'undefined') return;
+    let queued = false;
+    const check = () => {
+      queued = false;
+      const mini = document.querySelector('app-mini-player .mini');
+      if (!mini || window.innerWidth > 600) { this.lift.set(false); return; }
+      const box = mini.getBoundingClientRect();
+      const navTop = window.innerHeight - (document.querySelector('app-bottom-nav')?.getBoundingClientRect().height ?? 0);
+      this.lift.set(box.height > 0 && box.bottom > navTop - 120 && box.top < navTop);
+    };
+    const queue = () => { if (!queued) { queued = true; requestAnimationFrame(check); } };
+    document.addEventListener('scroll', queue, { passive: true, capture: true }); // the page or any inner list
+    window.addEventListener('resize', queue);
+    new MutationObserver(queue).observe(document.body, { childList: true, subtree: true });
+    queue();
   }
 
   /** The speech bubble next to the button shows until the listener opens the chat once. */

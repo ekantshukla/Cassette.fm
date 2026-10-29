@@ -46,7 +46,7 @@ jobs:
             fs.writeFileSync(f, fs.readFileSync(f, 'utf8').replace(/^export const FIREBASE_WEB_CONFIG = .*$/m, 'export const FIREBASE_WEB_CONFIG = ' + JSON.stringify(json) + ';'));
           "
 
-      # Optional: "Ask AI" song finder (repository VARIABLE SONG_BOT_URL, see SONG-BOT.md).
+      # Optional: Cassette AI song finder (repository VARIABLE SONG_BOT_URL, see SONG-BOT.md).
       - name: Song finder address
         if: ${{ vars.SONG_BOT_URL != '' }}
         run: sed -i "s|^export const SONG_BOT_URL = .*|export const SONG_BOT_URL = '${{ vars.SONG_BOT_URL }}';|" src/app/data/app-info.ts

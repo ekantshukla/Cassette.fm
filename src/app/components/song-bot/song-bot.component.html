@@ -1,5 +1,5 @@
 <!-- Floating Cassette AI button: bottom-right on every screen -->
-<button class="fab" type="button" [class.open]="bot.open()" [attr.aria-label]="bot.open() ? 'Close Cassette AI' : 'Open Cassette AI: find any song'"
+<button class="fab" type="button" [class.open]="bot.open()" [class.lift]="lift()" [class.hidden]="ui.searchOpen() && !bot.open()" [attr.aria-label]="bot.open() ? 'Close Cassette AI' : 'Open Cassette AI: find any song'"
         [attr.aria-expanded]="bot.open()" (click)="toggle()">
   @if (bot.open()) {
     <app-icon name="close" />

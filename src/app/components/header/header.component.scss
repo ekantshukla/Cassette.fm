@@ -26,8 +26,12 @@ header {
   font-size: 30px;
   line-height: 1;
   letter-spacing: -0.01em;
+  display: flex;
+  align-items: center;
+  gap: 0.28em;
 
   i { color: var(--rose); }
+  .mark { width: 1.05em; height: auto; flex: none; transform: translateY(0.04em); }
 }
 
 
@@ -127,15 +131,19 @@ header {
   .name { min-width: 0; font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 }
 
-.login {
-  padding: 8px 16px;
-  border-radius: 999px;
-  border: 0;
-  background: var(--rose);
-  color: var(--ink-on-rose);
-  font-weight: 600;
-  font-size: 13px;
-  white-space: nowrap;
+.login { // not signed in: a round person icon (opens Log in / Create account)
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 1px solid rgba(var(--blush-rgb), 0.45);
+  background: rgba(var(--rose-rgb), 0.16);
+  color: var(--blush);
+  transition: background 0.15s, border-color 0.15s;
+
+  &:hover { background: rgba(var(--rose-rgb), 0.28); border-color: rgba(var(--blush-rgb), 0.7); }
+  app-icon { width: 21px; height: 21px; }
 }
 
 @media (max-width: 900px) {
@@ -145,13 +153,13 @@ header {
 @media (max-width: 600px) {
   // Phones: Settings, Library and the language switch live in the bottom bar. Search and profile stay up here.
   .gear, .menu-btn, app-language-picker { display: none; }
-  .profile { padding: 2px; border: 0; background: transparent; .name { display: none; } .pic { width: 32px; height: 32px; } }
-  .login { padding: 7px 12px; font-size: 12px; }
+  .profile { padding: 2px; border: 0; background: transparent; .name { display: none; } .pic { width: 38px; height: 38px; } }
+  .login { width: 42px; height: 42px; app-icon { width: 21px; height: 21px; } }
 }
 
 @media (max-width: 600px) {
-  .bar { gap: 10px; padding-block: 10px; }
-  .logo { font-size: 28px; letter-spacing: -0.02em; }
+  .bar { gap: 10px; min-height: 66px; padding-block: 12px; }
+  .logo { font-size: 32px; letter-spacing: -0.02em; }
   .menu-btn { width: 36px; height: 40px; place-items: center end; padding: 0; }
   .gear { width: 38px; height: 40px; border: 0; background: transparent; }
   .gear app-icon { width: 22px; height: 22px; }
@@ -159,5 +167,5 @@ header {
 }
 
 @media (max-width: 360px) {
-  .logo { font-size: 24px; }
+  .logo { font-size: 27px; }
 }

@@ -41,6 +41,15 @@ The code is `worker/song-bot.js`.
    **New repository variable**. Name it `SONG_BOT_URL` and paste the address.
 7. Run **Deploy to GitHub Pages** and **Build Android app** again.
 
+## Check it works
+
+- Before step 6, test the worker from any computer's terminal:
+  `curl -X POST https://cassette-song-bot.yourname.workers.dev -H "Content-Type: application/json" -d '{"message":"rain song from Mohra"}'`
+  You should get back JSON with `"songs": [...]`. `{"error":"ai_unavailable"}` means the key or credit is wrong.
+- After step 7, open the website, tap the Cassette AI button and ask for a song. The answer should name the
+  song and film. If it says "the AI song finder isn't switched on yet", the `SONG_BOT_URL` variable is missing
+  or the site wasn't redeployed.
+
 ## Good to know
 
 - **Limit per person:** each visitor can ask 8 questions a minute, so nobody can burn your credit. Set a
