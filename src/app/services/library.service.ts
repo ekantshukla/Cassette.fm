@@ -89,7 +89,12 @@ export class LibraryService {
   readonly stations = computed<Station[]>(() => stationsFor(this.language()));
   readonly groups = computed<StationGroup[]>(() => groupStations(this.stations()));
 
-  private readonly selectedKey = signal<string>(this.storage.get(KEY_STATION, 'top'));
+  /**
+   * The app always opens on Home: the language's own playlists. If the last thing open was
+   * Downloads, Liked, one of your playlists or a bot result, it starts on Top Classics instead
+   * (those are one tap away in the bottom bar and Library).
+   */
+  private readonly selectedKey = signal<string>(startKey(this.storage.get(KEY_STATION, 'top')));
   /** The playlist shown in the song list. */
   readonly selected = computed<Station>(() => this.findStation(this.selectedKey()) ?? this.stations()[0]);
 
@@ -497,4 +502,11 @@ function usableIds(docs: ArchiveDoc[] | null): string[] {
     .filter(d => d?.identifier && !/podcast|episode|radio show|audiobook/i.test(firstValue(d.title)))
     .map(d => d.identifier);
   return [...new Set(ids)];
+}
+
+/** Opening key for the app: playlists of the language only, never Downloads / Liked / your own lists. */
+function startKey(saved: string): string {
+  const local = saved === LIKED_STATION.key || saved === DOWNLOADS_STATION.key || saved.startsWith(USER_PREFIX)
+    || saved.startsWith(SMART_PREFIX) || saved.startsWith('bot:');
+  return local ? 'top' : saved;
 }

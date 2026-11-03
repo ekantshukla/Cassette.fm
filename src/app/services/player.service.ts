@@ -405,7 +405,9 @@ export class PlayerService {
     const station = saved.temporaryStation ?? this.library.findStation(saved.stationKey);
     if (!station) return;
 
-    this.library.select(station);
+    // The app opens on Home: a song last played from Downloads, Liked or your own playlist is
+    // ready in the player (Next carries on in that list), but the screen shows the language's playlists.
+    if (!isLocalStation(station)) this.library.select(station);
     this.queueKey.set(station.key);
     this.current.set(saved.song);
     this.shuffle.set(!!saved.shuffle);
