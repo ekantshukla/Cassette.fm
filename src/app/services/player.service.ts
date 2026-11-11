@@ -302,16 +302,31 @@ export class PlayerService {
   }
 
   next(): void {
-    const songs = this.library.songsFor(this.queueKey());
+    // The list the song came from; if that's gone (e.g. a search or AI list), the playlist on screen.
+    let key = this.queueKey();
+    let songs = this.library.songsFor(key);
+    if (!songs.length) {
+      key = this.library.selected().key;
+      songs = this.library.songsFor(key);
+    }
     if (!songs.length) return;
-    const at = this.currentIndex(songs);
+    let at = this.currentIndex(songs);
+    if (at < 0) at = this.sameSongAt(songs); // the list was refreshed: find the song by name
     if (this.shuffle() && songs.length > 1) {
       let pick: number;
       do { pick = randomIndex(songs.length); } while (pick === at);
-      this.playAt(this.queueKey(), pick);
+      this.playAt(key, pick);
     } else {
-      this.playAt(this.queueKey(), at + 1);
+      this.playAt(key, at + 1);
     }
+  }
+
+  /** Where the playing song sits in a list by title and singer, or -1. */
+  private sameSongAt(songs: Song[]): number {
+    const current = this.current();
+    if (!current) return -1;
+    const name = (s: Song) => `${s.title}|${s.artist}`.toLowerCase();
+    return songs.findIndex(s => name(s) === name(current));
   }
 
   /** Restarts the song if it's past 4 seconds, otherwise goes back. */
@@ -323,9 +338,65 @@ export class PlayerService {
     this.playAt(this.queueKey(), lastIndex >= 0 ? lastIndex : Math.max(this.currentIndex(songs), 0) - 1, true, -1);
   }
 
+  /** Jumps forward (+) or back (-) in the song by some seconds (the ⟲10 / 10⟳ buttons). */
+  skipBy(seconds: number): void {
+    const a = this.audio;
+    if (!this.current() || !isFinite(a.duration) || !a.duration) return;
+    this.seekTo((a.currentTime + seconds) / a.duration);
+  }
+
   /** `fraction` from 0 to 1 */
   seekTo(fraction: number): void {
-    if (isFinite(this.audio.duration)) this.audio.currentTime = this.audio.duration * fraction;
+    const a = this.audio;
+    if (!isFinite(a.duration)) return;
+    const target = Math.max(0, Math.min(a.duration - 0.5, a.duration * fraction));
+    this.seekTarget = target;
+    if (this.canSeekTo(target)) a.currentTime = target;
+    else void this.seekViaWholeFile(target);
+  }
+
+  /** Where a seek was asked to go (checked once it lands). */
+  private seekTarget: number | null = null;
+  /** The whole song held in memory after a skip-ahead the server couldn't do. */
+  private seekBlobUrl: string | null = null;
+
+  private canSeekTo(time: number): boolean {
+    const r = this.audio.seekable;
+    for (let i = 0; i < r.length; i++) if (time >= r.start(i) - 0.5 && time <= r.end(i) + 0.5) return true;
+    return false;
+  }
+
+  /**
+   * Some song addresses (e.g. archive.org's /cors/ one, used while the equaliser is on) can't jump
+   * into the middle of a song. Then the whole song is fetched once and played from memory, where
+   * skipping ahead or back always works.
+   */
+  private async seekViaWholeFile(target: number): Promise<void> {
+    const a = this.audio;
+    const song = this.current();
+    if (!song?.itemId || a.src.startsWith('blob:')) { a.currentTime = target; return; }
+    const token = this.loadToken;
+    const wasPlaying = !a.paused;
+    this.toast.show('Getting the song ready to skip ahead…', 2600);
+    try {
+      const res = await fetch(this.archive.corsUrl(song)); // the /cors/ address can be read by the app
+      if (!res.ok) throw new Error(String(res.status));
+      const blob = await res.blob();
+      if (token !== this.loadToken) return; // the listener moved on to another song
+      this.dropSeekBlob();
+      this.seekBlobUrl = URL.createObjectURL(blob);
+      this.resumeAt = target;
+      a.src = this.seekBlobUrl;
+      a.playbackRate = this.settings.speed();
+      if (wasPlaying) { this.expectPlay(); a.play().catch(() => undefined); }
+    } catch {
+      this.toast.show("Couldn't skip ahead in this song. Try again in a moment.", 3000);
+    }
+  }
+
+  private dropSeekBlob(): void {
+    if (this.seekBlobUrl) URL.revokeObjectURL(this.seekBlobUrl);
+    this.seekBlobUrl = null;
   }
 
   /** `percent` from 0 to 100 */
@@ -432,6 +503,12 @@ export class PlayerService {
       this.resumeAt = 0;
     });
     a.addEventListener('waiting', () => { if (!a.paused) this.expectPlay(); });
+    // A seek that didn't land (the server ignored it and the song went back to the start): fetch the whole song.
+    a.addEventListener('seeked', () => {
+      const target = this.seekTarget;
+      this.seekTarget = null;
+      if (target !== null && target > 5 && Math.abs(a.currentTime - target) > 3 && !a.src.startsWith('blob:')) void this.seekViaWholeFile(target);
+    });
     a.addEventListener('ended', () => {
       if (this.sleepAfterSong()) {
         this.sleepAfterSong.set(false);
@@ -460,6 +537,8 @@ export class PlayerService {
   /** Sets the audio source: the saved copy if there is one, otherwise archive.org. */
   private load(song: Song, play: boolean): void {
     const token = ++this.loadToken;
+    this.dropSeekBlob();
+    this.seekTarget = null;
     this.counted = !play; // a song restored after a refresh was already counted
     const speed = this.settings.speed();
     const start = (src: string) => {
