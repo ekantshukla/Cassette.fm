@@ -1,5 +1,5 @@
 # Builds the site and publishes it to GitHub Pages.
-# Runs on every push to main, once a day (to refresh the playlists), and on demand.
+# Runs on every push to main, every night (fresh playlists and latest songs by ~3-4 am India time), and on demand.
 # One-time setup: repo Settings -> Pages -> Source: "GitHub Actions".
 name: Deploy to GitHub Pages
 
@@ -7,7 +7,7 @@ on:
   push:
     branches: [main]
   schedule:
-    - cron: '30 21 * * *'   # every day at 03:00 India time
+    - cron: '30 20 * * *'   # every day at 02:00 India time; the playlist and latest-songs lookup takes 1-2 hours
   workflow_dispatch:
 
 permissions:
@@ -46,10 +46,27 @@ jobs:
             fs.writeFileSync(f, fs.readFileSync(f, 'utf8').replace(/^export const FIREBASE_WEB_CONFIG = .*$/m, 'export const FIREBASE_WEB_CONFIG = ' + JSON.stringify(json) + ';'));
           "
 
-      # Optional: Cassette AI song finder (repository VARIABLE SONG_BOT_URL, see SONG-BOT.md).
-      - name: Song finder address
-        if: ${{ vars.SONG_BOT_URL != '' }}
-        run: sed -i "s|^export const SONG_BOT_URL = .*|export const SONG_BOT_URL = '${{ vars.SONG_BOT_URL }}';|" src/app/data/app-info.ts
+      # Cassette AI (see SONG-BOT.md). With the Cloudflare secrets set, this deploys the bot to Cloudflare
+      # and points the site at it, all by itself. Or set the repository VARIABLE SONG_BOT_URL by hand.
+      - name: Cassette AI
+        continue-on-error: true
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
+          ALLOWED_ORIGINS: https://${{ github.repository_owner }}.github.io
+          BOT_URL: ${{ vars.SONG_BOT_URL }}
+        run: |
+          if [ -z "$BOT_URL" ] && [ -n "$CLOUDFLARE_API_TOKEN" ] && [ -n "$CLOUDFLARE_ACCOUNT_ID" ]; then
+            BOT_URL=$(bash scripts/song-bot.sh)
+          fi
+          if [ -n "$BOT_URL" ]; then
+            echo "Cassette AI: $BOT_URL"
+            sed -i "s|^export const SONG_BOT_URL = .*|export const SONG_BOT_URL = '$BOT_URL';|" src/app/data/app-info.ts
+          else
+            echo "Cassette AI is off (no Cloudflare secrets and no SONG_BOT_URL variable)."
+          fi
 
       # Optional: "Connect Spotify" (repository VARIABLE SPOTIFY_CLIENT_ID, see SPOTIFY.md).
       - name: Spotify client ID

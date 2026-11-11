@@ -52,11 +52,19 @@ jobs:
       - run: npm ci
 
       - name: Point the app at this repo and version
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
           sed -i "s|^export const GITHUB_REPO = .*|export const GITHUB_REPO = '${{ github.repository }}';|" src/app/data/app-info.ts
           sed -i "s|^export const APP_VERSION = .*|export const APP_VERSION = '${VERSION_NAME}';|" src/app/data/app-info.ts
-          if [ -n "${{ vars.SONG_BOT_URL }}" ]; then
-            sed -i "s|^export const SONG_BOT_URL = .*|export const SONG_BOT_URL = '${{ vars.SONG_BOT_URL }}';|" src/app/data/app-info.ts
+          # Cassette AI: the address set by hand, or the Cloudflare worker that "Deploy to GitHub Pages" set up.
+          BOT_URL="${{ vars.SONG_BOT_URL }}"
+          if [ -z "$BOT_URL" ] && [ -n "$CLOUDFLARE_API_TOKEN" ] && [ -n "$CLOUDFLARE_ACCOUNT_ID" ]; then
+            BOT_URL=$(bash scripts/song-bot.sh --url-only || true)
+          fi
+          if [ -n "$BOT_URL" ]; then
+            sed -i "s|^export const SONG_BOT_URL = .*|export const SONG_BOT_URL = '$BOT_URL';|" src/app/data/app-info.ts
           fi
           if [ -n "${{ vars.SPOTIFY_CLIENT_ID }}" ]; then
             sed -i "s|^export const SPOTIFY_CLIENT_ID = .*|export const SPOTIFY_CLIENT_ID = '${{ vars.SPOTIFY_CLIENT_ID }}';|" src/app/data/spotify-config.ts
