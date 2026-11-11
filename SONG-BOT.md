@@ -26,32 +26,44 @@ The AI key must never be inside the website or the APK, or anyone could copy it 
 So the app talks to a tiny **Cloudflare Worker** (free plan: 100,000 requests a day) that holds the key.
 The code is `worker/song-bot.js`.
 
-## Setup (10 minutes)
+## Setup (about 10 minutes, all in the browser)
 
-1. Get an Anthropic API key at <https://console.anthropic.com> and add a little credit. This can be the
-   same key as the AI song check (AI-FILTER.md).
-2. Sign up at <https://dash.cloudflare.com>. Go to **Workers & Pages → Create → Worker**, name it
-   `cassette-song-bot`, then **Deploy**.
-3. Choose **Edit code**, delete what's there, paste all of `worker/song-bot.js`, then **Deploy**.
-4. In the worker's **Settings → Variables and Secrets**:
-   - **Secret** `ANTHROPIC_API_KEY`: your key.
-   - Optional **secret** `YOUTUBE_API_KEY`: the same key as in LATEST.md. This turns on "Watch video here".
-   - Optional **variable** `ALLOWED_ORIGINS`: `https://<your-github-username>.github.io`. This makes only
-     your website (and the app) able to use it.
-   - Optional **variable** `AI_MODEL`: the default is `claude-haiku-5-5`.
-5. Copy the worker's address, for example `https://cassette-song-bot.yourname.workers.dev`.
-6. In GitHub, go to your repo → **Settings → Secrets and variables → Actions → Variables** →
-   **New repository variable**. Name it `SONG_BOT_URL` and paste the address.
-7. Run **Deploy to GitHub Pages** and **Build Android app** again.
+GitHub deploys the bot to Cloudflare and connects the website and app to it by itself. You only create
+two free accounts and paste four values into GitHub.
+
+1. **Anthropic key.** At <https://console.anthropic.com>: Settings → API keys → Create key. Copy it.
+   Add a little credit under Billing, and set a monthly spend limit there too.
+2. **Cloudflare account.** Sign up free at <https://dash.cloudflare.com>. Open **Workers & Pages** once,
+   so Cloudflare gives your account its `workers.dev` name.
+3. **Cloudflare account ID.** On the Workers & Pages page, copy the **Account ID** (right-hand side).
+4. **Cloudflare token.** Click your profile picture → **My Profile → API Tokens → Create Token** →
+   template **Edit Cloudflare Workers** → Use template → (Account Resources: your account, Zone
+   Resources: All zones) → Continue → Create Token. Copy it (it is shown only once).
+5. **Paste into GitHub.** Your repo → **Settings → Secrets and variables → Actions → Secrets** →
+   **New repository secret**, four times:
+   - `ANTHROPIC_API_KEY`: the key from step 1
+   - `CLOUDFLARE_ACCOUNT_ID`: the ID from step 3
+   - `CLOUDFLARE_API_TOKEN`: the token from step 4
+   - optional `YOUTUBE_API_KEY`: the same key as in LATEST.md; turns on "Watch video here"
+6. **Run it.** Actions → **Deploy to GitHub Pages** → Run workflow. In the run, the **Cassette AI** step
+   prints the bot's address. Then run **Build Android app** so the APK gets it too.
+
+The bot is redeployed with every website deploy, so it always matches the code in `worker/song-bot.js`.
+Only your website and the app can use it.
+
+**Prefer to do it by hand?** Create a Worker named `cassette-song-bot` in the Cloudflare dashboard, paste
+`worker/song-bot.js` into it, add the secret `ANTHROPIC_API_KEY` (and optionally `YOUTUBE_API_KEY`), then
+put the worker's address in a repository **variable** `SONG_BOT_URL`. A `SONG_BOT_URL` variable always
+wins over the automatic setup.
 
 ## Check it works
 
-- Before step 6, test the worker from any computer's terminal:
+- Test the worker from any computer's terminal (use the address the Cassette AI step printed):
   `curl -X POST https://cassette-song-bot.yourname.workers.dev -H "Content-Type: application/json" -d '{"message":"rain song from Mohra"}'`
   You should get back JSON with `"songs": [...]`. `{"error":"ai_unavailable"}` means the key or credit is wrong.
-- After step 7, open the website, tap the Cassette AI button and ask for a song. The answer should name the
-  song and film. If it says "the AI song finder isn't switched on yet", the `SONG_BOT_URL` variable is missing
-  or the site wasn't redeployed.
+- After the deploy, open the website, tap the Cassette AI button and ask for a song. The answer should name the
+  song and film. If it says "the AI song finder isn't switched on yet", open the last **Deploy to GitHub Pages** run
+  and read the **Cassette AI** step: it says what is missing.
 
 ## Good to know
 
