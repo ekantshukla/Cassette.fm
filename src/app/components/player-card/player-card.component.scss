@@ -147,8 +147,18 @@
 /* ---- Seek, controls, volume ---- */
 .progress { margin-top: 22px; }
 
+/* ⟲10 / 10⟳ between the times: jump back or forward in the song */
+.jump {
+  display: flex;
+  gap: 18px;
+  .icon-btn { width: 38px; height: 38px; color: var(--muted); }
+  .icon-btn:hover { color: var(--text); }
+  app-icon { width: 24px; height: 24px; }
+}
+
 .times {
   display: flex;
+  align-items: center;
   justify-content: space-between;
   font-family: var(--mono);
   font-size: 11px;

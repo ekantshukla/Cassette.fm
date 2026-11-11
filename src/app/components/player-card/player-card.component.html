@@ -33,7 +33,14 @@
     <input class="range" id="seek" type="range" min="0" max="1000" aria-label="Seek"
            [value]="seekPercent() * 10" [style.--p]="seekPercent() + '%'"
            (input)="onSeekInput(seek.value)" (change)="onSeekChange(seek.value)" #seek>
-    <div class="times"><span>{{ elapsed() }}</span><span>{{ total() }}</span></div>
+    <div class="times">
+      <span>{{ elapsed() }}</span>
+      <span class="jump">
+        <button class="icon-btn small" type="button" aria-label="Back 10 seconds" title="Back 10 seconds" (click)="player.skipBy(-10)"><app-icon name="back10" /></button>
+        <button class="icon-btn small" type="button" aria-label="Forward 10 seconds" title="Forward 10 seconds" (click)="player.skipBy(10)"><app-icon name="fwd10" /></button>
+      </span>
+      <span>{{ total() }}</span>
+    </div>
   </div>
 
   <!-- Controls -->
