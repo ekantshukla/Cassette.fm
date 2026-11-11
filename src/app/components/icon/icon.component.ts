@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 
 export type IconName =
-  | 'play' | 'pause' | 'next' | 'previous' | 'shuffle' | 'heart' | 'heart-filled'
+  | 'play' | 'pause' | 'next' | 'previous' | 'back10' | 'fwd10' | 'shuffle' | 'heart' | 'heart-filled'
   | 'volume' | 'search' | 'menu' | 'close' | 'globe' | 'chevron-down' | 'check'
   | 'mic' | 'download' | 'downloaded' | 'trash' | 'settings' | 'moon' | 'offline' | 'android'
   | 'plus' | 'pin' | 'more' | 'grid' | 'list' | 'sort' | 'library' | 'up' | 'down' | 'external' | 'spark' | 'home' | 'user';
